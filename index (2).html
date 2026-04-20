@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TerpTaste — UMD Food Discovery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --red:#E03A3E;--gold:#FFD200;--gold-dim:#9A7F00;
+  --bg:#111;--surface:#1C1C1C;--surface2:#242424;--surface3:#2C2C2C;
+  --border:#2E2E2E;--border2:#3E3E3E;
+  --text-primary:#F0EFEB;--text-secondary:#AAA;--text-muted:#666;
+  --green:#3DCB7A;
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:#0A0A0A;}
+.app-shell{display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 16px;flex-shrink:0;}
+.sidebar-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text-primary);margin-bottom:28px;padding:0 8px;}
+.sidebar-logo span{color:var(--red);}
+.snav{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:4px;color:var(--text-muted);}
+.snav:hover{background:var(--surface2);color:var(--text-secondary);}
+.snav.active{background:var(--surface3);color:var(--text-primary);}
+.snav span{font-size:14px;font-weight:500;}
+.sidebar-user{margin-top:auto;display:flex;align-items:center;gap:10px;padding-top:16px;border-top:1px solid var(--border);}
+.s-avatar{width:32px;height:32px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.s-name{font-size:13px;font-weight:600;color:var(--text-primary);}
+.s-sub{font-size:11px;color:var(--text-muted);}
+.main-area{flex:1;overflow:hidden;display:flex;flex-direction:column;background:var(--bg);}
+.main-scroll{flex:1;overflow-y:auto;overflow-x:hidden;}
+.main-scroll::-webkit-scrollbar{width:6px;}
+.main-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.panel{display:none;}
+.panel.active{display:block;}
+.ph{padding:24px 28px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;background:var(--bg);z-index:10;}
+.ph-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--text-primary);}
+.ph-sub{font-size:13px;color:var(--text-muted);margin-top:2px;}
+.loc-pill{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text-secondary);margin-top:6px;}
+.loc-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.surprise-btn{background:var(--gold);color:#111;border:none;border-radius:12px;padding:10px 20px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;margin-top:4px;}
+.surprise-btn:active{transform:scale(0.97);}
+.chips{padding:14px 28px 10px;display:flex;gap:8px;overflow-x:auto;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:500;color:var(--text-secondary);white-space:nowrap;cursor:pointer;flex-shrink:0;font-family:'DM Sans',sans-serif;}
+.chip.active,.chip:hover{background:var(--surface3);color:var(--text-primary);border-color:var(--border2);}
+.slabel{padding:18px 28px 10px;font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:0 28px 8px;}
+.rcard{background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:border-color .15s,transform .1s;}
+.rcard:hover{border-color:var(--border2);transform:translateY(-1px);}
+.rcard:active{transform:scale(.99);}
+.rimg{height:130px;position:relative;display:flex;align-items:flex-end;justify-content:space-between;padding:10px 12px;}
+.rimg-bg{position:absolute;inset:0;}
+.rimg-ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05),rgba(0,0,0,.72));}
+.rbadge{position:relative;z-index:1;background:rgba(255,210,0,.15);border:1px solid rgba(255,210,0,.35);border-radius:7px;padding:3px 8px;font-size:11px;font-weight:600;color:var(--gold);}
+.rdist{position:relative;z-index:1;background:rgba(0,0,0,.55);color:#fff;border-radius:7px;padding:3px 8px;font-size:11px;font-weight:500;}
+.rbody{padding:12px 14px 14px;}
+.rname{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--text-primary);margin-bottom:5px;line-height:1.2;}
+.rmeta{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);}
+.rprice{font-weight:600;color:var(--green);}
+.dot{width:2px;height:2px;background:var(--border2);border-radius:50%;flex-shrink:0;}
+.rtrust{margin-top:10px;background:var(--surface2);border-left:2px solid var(--gold-dim);border-radius:0 8px 8px 0;padding:8px 10px;font-size:12px;color:var(--text-secondary);line-height:1.5;}
+.tname{font-weight:600;color:var(--text-primary);}
+.mrow{padding:0 28px;display:flex;gap:10px;overflow-x:auto;margin-bottom:6px;}
+.mrow::-webkit-scrollbar{display:none;}
+.mcard{min-width:150px;background:var(--surface);border-radius:14px;border:1px solid var(--border);overflow:hidden;cursor:pointer;flex-shrink:0;transition:border-color .15s;}
+.mcard:hover{border-color:var(--border2);}
+.mimg{height:84px;position:relative;}
+.mimg-bg{position:absolute;inset:0;}
+.mimg-ov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,rgba(0,0,0,.75));}
+.mbadge{position:absolute;bottom:6px;left:8px;z-index:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:2px 7px;font-size:10px;font-weight:600;color:#fff;}
+.mbody{padding:8px 10px 10px;}
+.mname{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px;}
+.msub{font-size:11px;color:var(--text-muted);}
+.bg-mex{background:#2A1510;} .bg-thai{background:#1E1428;} .bg-greek{background:#141C2A;}
+.bg-eth{background:#1E1408;} .bg-ramen{background:#1E1208;} .bg-cafe{background:#1A1310;}
+.bg-india{background:#1E1228;} .bg-acai{background:#1A1028;} .bg-bbq{background:#221208;}
+.bg-pho{background:#0E1E10;} .bg-latin{background:#1E1010;} .bg-sushi{background:#0A1420;}
+.bg-chinese{background:#0E1A0E;} .bg-pizza{background:#1E1608;}
+.dhero{height:220px;position:relative;display:flex;align-items:flex-end;flex-shrink:0;}
+.dhero-bg{position:absolute;inset:0;}
+.dhero-ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.85));}
+.dtitle{position:relative;z-index:2;padding:0 28px 18px;}
+.dname{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#fff;margin-bottom:4px;}
+.dsub{font-size:13px;color:rgba(255,255,255,.6);}
+.dbody{padding:20px 28px;}
+.back-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-secondary);display:inline-flex;align-items:center;gap:6px;margin-bottom:18px;font-family:'DM Sans',sans-serif;}
+.back-btn:hover{color:var(--text-primary);}
+.pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;}
+.pill{border-radius:8px;padding:5px 11px;font-size:12px;font-weight:500;}
+.pill-open{background:rgba(61,203,122,.12);color:var(--green);border:1px solid rgba(61,203,122,.25);}
+.pill-wait{background:rgba(255,180,50,.1);color:#FFB432;border:1px solid rgba(255,180,50,.2);}
+.pill-price{background:var(--surface2);color:var(--text-secondary);border:1px solid var(--border);}
+.dcols{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.ds{font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+.tblock{background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:18px;border-left:3px solid var(--gold-dim);}
+.tblock p{font-size:13px;color:var(--text-secondary);line-height:1.6;font-style:italic;}
+.tblock .src{font-size:11px;color:var(--text-muted);margin-top:5px;font-style:normal;}
+.dmenu{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:18px;}
+.dtags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;}
+.dtag{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--text-secondary);}
+.dactions{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.abtn{border-radius:10px;padding:11px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);}
+.abtn:hover{border-color:var(--border2);}
+.abtn.saved-active{border-color:var(--red);color:var(--red);}
+.checkin-btn{background:var(--red);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;display:block;width:100%;}
+.checkin-btn.done{background:#1E6B40;}
+.fbody{padding:24px 28px;}
+.fgroup{margin-bottom:24px;}
+.fgtitle{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.fopts{display:flex;flex-wrap:wrap;gap:7px;}
+.fopt{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-secondary);font-family:'DM Sans',sans-serif;}
+.fopt.sel{background:var(--surface3);color:var(--text-primary);border-color:var(--border2);}
+.pgrid{display:grid;grid-template-columns:repeat(4,80px);gap:8px;}
+.popt{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;color:var(--text-secondary);font-family:'DM Sans',sans-serif;}
+.popt.sel{background:var(--surface3);color:var(--gold);border-color:var(--gold-dim);}
+input[type=range]{width:100%;max-width:360px;accent-color:var(--gold);margin:6px 0 4px;display:block;}
+.rlabels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);max-width:360px;}
+.apply-btn{background:var(--red);color:#fff;border:none;border-radius:12px;padding:13px 32px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
+.glayout{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px 28px;align-items:start;}
+.gtitle{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.mbrs{display:flex;margin-bottom:16px;}
+.mbr{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;border:2px solid var(--bg);margin-left:-8px;}
+.mbr:first-child{margin-left:0;}
+.vcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 14px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
+.vcard:hover{border-color:var(--border2);}
+.vcard.picked{border:1px solid var(--red);background:rgba(224,58,62,.05);}
+.vheader{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.vname{font-size:14px;font-weight:600;color:var(--text-primary);}
+.vtag{font-size:10px;padding:3px 8px;border-radius:6px;font-weight:600;background:rgba(255,210,0,.1);color:var(--gold);border:1px solid rgba(255,210,0,.2);}
+.vmeta{font-size:12px;color:var(--text-muted);margin-bottom:8px;}
+.vbar-bg{background:var(--surface2);border-radius:3px;height:4px;overflow:hidden;}
+.vbar{height:4px;border-radius:3px;background:var(--red);transition:width .5s ease;}
+.vcount{font-size:11px;color:var(--text-muted);margin-top:4px;}
+.win-banner{background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:24px;text-align:center;}
+.win-em{font-size:32px;margin-bottom:8px;}
+.win-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text-primary);margin-bottom:4px;}
+.win-sub{font-size:12px;color:var(--text-muted);}
+.invite-btn{width:100%;border:1px dashed var(--border2);background:transparent;border-radius:10px;padding:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-muted);cursor:pointer;margin-bottom:14px;}
+.add-opt-btn{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;margin-top:4px;}
+.add-opt-btn:hover{border-color:var(--border2);}
+.gsuggestion-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;}
+.gsugg-title{font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:10px;}
+.gsugg-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.gchip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-secondary);font-family:'DM Sans',sans-serif;}
+.gchip:hover{border-color:var(--border2);color:var(--text-primary);}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:0 28px 28px;}
+.fitem{background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:14px;}
+.ftop{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.fpfp{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+.fwho{font-size:13px;font-weight:600;color:var(--text-primary);}
+.fwhen{font-size:11px;color:var(--text-muted);}
+.frest{font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:4px;}
+.fquote{font-size:12px;color:var(--text-secondary);line-height:1.5;}
+.factions{display:flex;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.fa{font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;}
+.fa.fire{color:var(--red);}
+.fa:hover{color:var(--text-primary);}
+.saved-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;padding:0 28px 28px;}
+.saved-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+.saved-item:hover{border-color:var(--border2);}
+.saved-name{font-size:14px;font-weight:600;color:var(--text-primary);}
+.saved-meta{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.saved-remove{font-size:20px;color:var(--text-muted);cursor:pointer;padding:4px 8px;line-height:1;}
+.saved-remove:hover{color:var(--red);}
+.empty-state{padding:48px 28px;text-align:center;color:var(--text-muted);font-size:14px;line-height:1.8;}
+.playout{display:grid;grid-template-columns:240px 1fr;gap:24px;padding:24px 28px;align-items:start;}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;}
+.pavatar{width:72px;height:72px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px;}
+.pname{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--text-primary);}
+.phandle{font-size:12px;color:var(--text-muted);margin-top:3px;}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;}
+.scard{background:var(--surface2);border-radius:12px;padding:12px;text-align:center;}
+.snum{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text-primary);}
+.slbl{font-size:10px;color:var(--text-muted);margin-top:2px;}
+.psec{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+.ptitle{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.ptags{display:flex;flex-wrap:wrap;gap:6px;}
+.ptag{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 11px;font-size:12px;font-weight:500;color:var(--text-secondary);}
+.hist{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.hist:last-child{border-bottom:none;}
+.hname{font-size:13px;font-weight:600;color:var(--text-primary);}
+.hsub{font-size:11px;color:var(--text-muted);margin-top:1px;}
+.hdate{font-size:12px;color:var(--text-muted);}
+.mobile-nav{display:none;background:var(--surface);border-top:1px solid var(--border);padding:10px 0 14px;flex-shrink:0;}
+.mobile-nav-inner{display:flex;}
+.nitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:4px 0;}
+.nlabel{font-size:10px;color:var(--text-muted);font-weight:500;}
+.nitem.active .nlabel{color:var(--gold);}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface3);border:1px solid var(--border2);border-radius:10px;padding:10px 20px;font-size:13px;color:var(--text-primary);opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@media(max-width:700px){
+  .sidebar{display:none;}
+  .mobile-nav{display:flex;flex-direction:column;}
+  .ph{padding:14px 16px 12px;}
+  .ph-title{font-size:20px;}
+  .chips{padding:10px 16px 8px;}
+  .slabel{padding:14px 16px 8px;}
+  .cgrid{grid-template-columns:1fr;padding:0 16px 8px;gap:10px;}
+  .mrow{padding:0 16px;}
+  .fbody{padding:16px;}
+  .glayout{grid-template-columns:1fr;padding:16px;}
+  .fgrid{grid-template-columns:1fr;padding:0 16px 16px;}
+  .saved-grid{grid-template-columns:1fr;padding:0 16px 16px;}
+  .playout{grid-template-columns:1fr;padding:16px;}
+  .dtitle{padding:0 16px 14px;}
+  .dbody{padding:16px;}
+  .dcols{grid-template-columns:1fr;}
+  .dname{font-size:22px;}
+  .pgrid{grid-template-columns:repeat(4,1fr);}
+  .toast{bottom:90px;}
+}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">Terp<span>Taste</span></div>
+    <div class="snav active" id="sb-home" onclick="go('home')">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H14v-5H8v5H4a1 1 0 01-1-1V9.5z" stroke="#FFD200" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="snav" id="sb-filter" onclick="go('filter')">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 5h16M6 11h10M9 17h4" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>Filter</span>
+    </div>
+    <div class="snav" id="sb-group" onclick="go('group')">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="#666" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="#666" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>Group Vote</span>
+    </div>
+    <div class="snav" id="sb-friends" onclick="go('friends')">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M19 14c0 1-1 2-2 2H7l-4 4V5c0-1 1-2 2-2h12c1 0 2 1 2 2v9z" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Friends</span>
+    </div>
+    <div class="snav" id="sb-saved" onclick="go('saved')">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 17.5l-7-5.5a4 4 0 015.6-5.6L11 8l1.4-1.6A4 4 0 0118 12l-7 5.5z" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Saved</span>
+    </div>
+    <div class="snav" id="sb-profile" onclick="go('profile')">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="#666" stroke-width="1.5"/><path d="M4 19c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>Profile</span>
+    </div>
+    <div class="sidebar-user">
+      <div class="s-avatar">DA</div>
+      <div><div class="s-name">Daniel A.</div><div class="s-sub">UMD '27</div></div>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <div class="main-scroll">
+
+      <!-- HOME -->
+      <div class="panel active" id="panel-home">
+        <div class="ph">
+          <div>
+            <div class="ph-title">Discover</div>
+            <div class="loc-pill"><div class="loc-dot"></div>College Park · Near Campus</div>
+          </div>
+          <button class="surprise-btn" onclick="surpriseMe()">🎲 Surprise Me</button>
+        </div>
+        <div class="chips" id="home-chips">
+          <div class="chip active" onclick="filterChip(this,'all')">All</div>
+          <div class="chip" onclick="filterChip(this,'open')">Open Now</div>
+          <div class="chip" onclick="filterChip(this,'budget')">Under $15</div>
+          <div class="chip" onclick="filterChip(this,'fast')">Fast Food</div>
+          <div class="chip" onclick="filterChip(this,'sitdown')">Sit-Down</div>
+          <div class="chip" onclick="filterChip(this,'cafe')">Café</div>
+          <div class="chip" onclick="filterChip(this,'vegan')">Vegan</div>
+          <div class="chip" onclick="filterChip(this,'halal')">Halal</div>
+        </div>
+        <div id="home-content"></div>
+      </div>
+
+      <!-- DETAIL -->
+      <div class="panel" id="panel-detail">
+        <div class="dhero"><div class="dhero-bg" id="dhero-bg"></div><div class="dhero-ov"></div><div class="dtitle"><div class="dname" id="dname"></div><div class="dsub" id="dsub"></div></div></div>
+        <div class="dbody">
+          <button class="back-btn" onclick="go('home')">← Back to results</button>
+          <div class="pills" id="dpills"></div>
+          <div class="dcols">
+            <div>
+              <div class="ds">From your people</div>
+              <div class="tblock" id="dtrust"></div>
+              <div class="ds">On the menu</div>
+              <div class="dmenu" id="dmenu"></div>
+            </div>
+            <div>
+              <div class="ds">Dietary info</div>
+              <div class="dtags" id="ddiet"></div>
+              <div class="dactions">
+                <button class="abtn" onclick="go('group')">Suggest to Group →</button>
+                <button class="abtn" id="save-btn" onclick="toggleSave()">♡ Save</button>
+              </div>
+              <button class="checkin-btn" id="checkin-btn" onclick="checkIn()">Been Here — Check In</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTER -->
+      <div class="panel" id="panel-filter">
+        <div class="ph"><div><div class="ph-title">Filter</div><div class="ph-sub">Narrow down your options</div></div><div style="font-size:13px;color:var(--red);cursor:pointer;font-weight:600;" onclick="clearFilters()">Clear all</div></div>
+        <div class="fbody">
+          <div class="fgroup"><div class="fgtitle">Cuisine type</div><div class="fopts"><div class="fopt sel" onclick="tF(this)">All</div><div class="fopt" onclick="tF(this)">Fast Food</div><div class="fopt" onclick="tF(this)">Sit-Down</div><div class="fopt" onclick="tF(this)">Café</div><div class="fopt" onclick="tF(this)">Asian</div><div class="fopt" onclick="tF(this)">Mexican</div><div class="fopt" onclick="tF(this)">Ethiopian</div><div class="fopt" onclick="tF(this)">Indian</div><div class="fopt" onclick="tF(this)">Mediterranean</div><div class="fopt" onclick="tF(this)">BBQ</div><div class="fopt" onclick="tF(this)">Latin</div></div></div>
+          <div class="fgroup"><div class="fgtitle">Price range</div><div class="pgrid"><div class="popt sel" onclick="tP(this)">$</div><div class="popt sel" onclick="tP(this)">$$</div><div class="popt" onclick="tP(this)">$$$</div><div class="popt" onclick="tP(this)">$$$$</div></div></div>
+          <div class="fgroup"><div class="fgtitle">Max distance: <span id="dval">0.5</span> mi</div><input type="range" min="1" max="30" value="5" step="1" oninput="document.getElementById('dval').textContent=(this.value/10).toFixed(1)"><div class="rlabels"><span>0.1 mi</span><span>3.0 mi</span></div></div>
+          <div class="fgroup"><div class="fgtitle">Dietary needs</div><div class="fopts"><div class="fopt" onclick="tF(this)">Vegetarian</div><div class="fopt" onclick="tF(this)">Vegan</div><div class="fopt" onclick="tF(this)">Gluten-Free</div><div class="fopt" onclick="tF(this)">Halal</div><div class="fopt" onclick="tF(this)">Kosher</div><div class="fopt" onclick="tF(this)">Dairy-Free</div></div></div>
+          <div class="fgroup"><div class="fgtitle">Hours</div><div class="fopts"><div class="fopt sel" onclick="tF(this)">Open Now</div><div class="fopt" onclick="tF(this)">Open Late (10pm+)</div><div class="fopt" onclick="tF(this)">Breakfast</div></div></div>
+          <button class="apply-btn" onclick="go('home')">Show Results →</button>
+        </div>
+      </div>
+
+      <!-- GROUP -->
+      <div class="panel" id="panel-group">
+        <div class="ph"><div><div class="ph-title">Group Vote</div><div class="ph-sub">Settle it in 60 seconds — no more 45-minute group chats</div></div></div>
+        <div class="glayout">
+          <div>
+            <div class="gsuggestion-box"><div class="gsugg-title">Add a spot to the vote</div><div class="gsugg-chips" id="gsugg"></div></div>
+            <div class="gtitle">Active session</div>
+            <div class="mbrs"><div class="mbr" style="background:#E03A3E;">DA</div><div class="mbr" style="background:#3D7EBF;">AK</div><div class="mbr" style="background:#2A9D60;">JT</div><div class="mbr" style="background:#9B59B6;">MR</div></div>
+            <button class="invite-btn">+ Invite friends by link</button>
+            <div class="gtitle" style="margin-bottom:10px;">Cast your vote</div>
+            <div id="vcards"></div>
+            <button class="add-opt-btn" onclick="showToast('Use the picker above to add spots')">+ Add another option</button>
+          </div>
+          <div>
+            <div class="gtitle" style="margin-bottom:10px;">Live result</div>
+            <div class="win-banner"><div class="win-em" id="win-em">🌮</div><div class="win-name" id="win-name">Taqueria Habanero wins!</div><div class="win-sub" id="win-sub">0.4 mi · Mexican · $$</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FRIENDS -->
+      <div class="panel" id="panel-friends">
+        <div class="ph"><div><div class="ph-title">Friends Feed</div><div class="ph-sub">Real check-ins from people you actually know — no bots, no fake reviews</div></div></div>
+        <div style="height:14px;"></div>
+        <div class="fgrid">
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:#E03A3E;">JT</div><div><div class="fwho">Jordan T.</div><div class="fwhen">2 hours ago</div></div></div><div class="frest">Taqueria Habanero</div><div class="fquote">"Al pastor and a hibiscus agua fresca — that's the move. Michelin for a reason."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('habanero')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:#3D7EBF;">AK</div><div><div class="fwho">Aisha K.</div><div class="fwhen">Yesterday · 7pm</div></div></div><div class="frest">Aroy Thai</div><div class="fquote">"Got the drunken noodles on 3-star spice. Do NOT underestimate it. So good though."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('aroy')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:#2A9D60;">MR</div><div><div class="fwho">Marcus R.</div><div class="fwhen">2 days ago</div></div></div><div class="frest">Shagga Ethiopian</div><div class="fquote">"Ubered over and split the combo platter with 2 friends. $16 each, stuffed. Go."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('shagga')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:#9B59B6;">SP</div><div><div class="fwho">Simone P.</div><div class="fwhen">3 days ago</div></div></div><div class="frest">Marathon Deli</div><div class="fquote">"Marathon fries at midnight after studying. Classic. $4. They never miss."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('marathon')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:#E67E22;">KB</div><div><div class="fwho">Kevin B.</div><div class="fwhen">4 days ago</div></div></div><div class="frest">Qu Japan</div><div class="fquote">"Tonkotsu ramen, paid cash, got 5% off. This place is consistently solid."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('qu')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:#1ABC9C;">PR</div><div><div class="fwho">Priya R.</div><div class="fwhen">5 days ago</div></div></div><div class="frest">Spice 6</div><div class="fquote">"Naan pizza with tikka masala. $14 and you'll be full for the rest of the day."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('spice6')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
+        </div>
+      </div>
+
+      <!-- SAVED -->
+      <div class="panel" id="panel-saved">
+        <div class="ph"><div><div class="ph-title">Saved Spots</div><div class="ph-sub">Your personal shortlist</div></div></div>
+        <div style="height:14px;"></div>
+        <div id="saved-content"></div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="panel" id="panel-profile">
+        <div class="ph"><div class="ph-title">Profile</div></div>
+        <div class="playout">
+          <div>
+            <div class="pcard">
+              <div class="pavatar">DA</div>
+              <div class="pname">Daniel A.</div>
+              <div class="phandle">UMD '27 · College Park</div>
+              <div class="sgrid">
+                <div class="scard"><div class="snum" id="stat-ci">0</div><div class="slbl">Check-ins</div></div>
+                <div class="scard"><div class="snum" id="stat-sv">0</div><div class="slbl">Saved</div></div>
+                <div class="scard"><div class="snum">12</div><div class="slbl">Friends</div></div>
+                <div class="scard"><div class="snum">4</div><div class="slbl">Groups</div></div>
+              </div>
+            </div>
+            <div class="psec" style="margin-top:12px;">
+              <div class="ptitle">Dietary preferences</div>
+              <div class="ptags"><div class="ptag">Asian</div><div class="ptag">Under $15</div><div class="ptag">Quick eats</div><div class="ptag">Vegan options</div><div class="ptag">Open late</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="psec">
+              <div class="ptitle">Visit history</div>
+              <div id="visit-history"><div style="font-size:13px;color:var(--text-muted);padding:8px 0;">No visits yet — check in after eating!</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MOBILE NAV -->
+    <div class="mobile-nav">
+      <div class="mobile-nav-inner">
+        <div class="nitem active" id="mn-home" onclick="go('home')"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H14v-5H8v5H4a1 1 0 01-1-1V9.5z" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="nlabel">Home</div></div>
+        <div class="nitem" id="mn-filter" onclick="go('filter')"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 5h16M6 11h10M9 17h4" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg><div class="nlabel">Filter</div></div>
+        <div class="nitem" id="mn-group" onclick="go('group')"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="#666" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="#666" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg><div class="nlabel">Group</div></div>
+        <div class="nitem" id="mn-friends" onclick="go('friends')"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M19 14c0 1-1 2-2 2H7l-4 4V5c0-1 1-2 2-2h12c1 0 2 1 2 2v9z" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="nlabel">Friends</div></div>
+        <div class="nitem" id="mn-saved" onclick="go('saved')"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 17.5l-7-5.5a4 4 0 015.6-5.6L11 8l1.4-1.6A4 4 0 0118 12l-7 5.5z" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="nlabel">Saved</div></div>
+        <div class="nitem" id="mn-profile" onclick="go('profile')"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="#666" stroke-width="1.5"/><path d="M4 19c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg><div class="nlabel">Profile</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 22 REAL COLLEGE PARK RESTAURANTS ─────────────────────────────────────────
+const R = {
+  habanero:{name:'Taqueria Habanero',cuisine:'Mexican',price:'$$',dist:0.4,wait:10,tags:['mexican','sitdown','vegan','halal'],open:true,late:false,badge:'⭐ Michelin Bib',bg:'bg-mex',pills:[{t:'Open til 10pm',c:'pill-open'},{t:'~10 min wait',c:'pill-wait'},{t:'$10–$18',c:'pill-price'}],trust:{p:'"Best tacos near campus, not even close. Al pastor, tinga, and polpo (octopus) are all elite. Michelin Bib Gourmand — for real."',s:'— Jordan T. · 6 check-ins'},menu:'Tacos al pastor, tinga, lengua, polpo. Burritos, enchiladas, guacamole. Agua fresca. Free chips first order.',diet:['Vegetarian tacos available','Vegan options','Gluten-free tortilla on request']},
+  aroy:{name:'Aroy Thai',cuisine:'Thai',price:'$',dist:0.6,wait:10,tags:['asian','fast','vegan'],open:true,late:false,badge:'🌶 Hidden gem',bg:'bg-thai',pills:[{t:'Open til 8:30pm',c:'pill-open'},{t:'~10 min',c:'pill-wait'},{t:'$10–$14',c:'pill-price'}],trust:{p:'"A tiny spot on College Ave that gets overlooked — do not sleep on it. Drunken noodles at spice 3 is a rite of passage. Huge portions."',s:'— Aisha K. · 4 check-ins'},menu:'Drunken noodles, Pad Thai, Pad See Ew, green/red curry, pineapple fried rice, larb gai.',diet:['Vegetarian-friendly','Vegan on request']},
+  marathon:{name:'Marathon Deli',cuisine:'Greek',price:'$',dist:0.4,wait:5,tags:['mediterranean','fast','halal'],open:true,late:true,badge:'🌙 Late night staple',bg:'bg-greek',pills:[{t:'Open late',c:'pill-open'},{t:'~5 min',c:'pill-wait'},{t:'$4–$12',c:'pill-price'}],trust:{p:'"Marathon Fries are the late-night institution of College Park. The gyro is genuinely great and under $12."',s:'— Simone P. · 9 check-ins'},menu:'Gyros, Marathon Fries, cheesesteaks, falafel, chicken wraps.',diet:['Vegetarian falafel','Halal-friendly']},
+  qu:{name:'Qu Japan',cuisine:'Japanese',price:'$$',dist:0.3,wait:15,tags:['asian','sitdown'],open:true,late:false,badge:'🍜 Ramen + hibachi',bg:'bg-ramen',pills:[{t:'Open til 10pm',c:'pill-open'},{t:'~15 min',c:'pill-wait'},{t:'$13–$20',c:'pill-price'}],trust:{p:'"Chicken teriyaki ramen is the move. Pay cash for a 5% discount. Hibachi bowls are solid too."',s:'— Simone P. · 5 check-ins'},menu:'Ramen (tonkotsu, chicken teriyaki, shoyu), hibachi bowls, gyoza, bubble tea.',diet:['Gluten-free options','Vegan ramen available']},
+  shagga:{name:'Shagga Ethiopian',cuisine:'Ethiopian',price:'$$',dist:1.8,wait:20,tags:['sitdown','vegan','halal'],open:true,late:false,badge:'🌍 Fan favorite',bg:'bg-eth',pills:[{t:'Open til 10pm',c:'pill-open'},{t:'Sit-down',c:'pill-wait'},{t:'$13–$20',c:'pill-price'}],trust:{p:'"Combo platter fed 3 of us. $16 each, all stuffed. Lamb wot and lentils both incredible. Best Ethiopian near campus."',s:'— Marcus R. · 4 check-ins'},menu:'Combo platters (meat or veggie), lamb wot, doro tibs, misir wot lentils, sambusas, Ethiopian coffee.',diet:['Vegetarian platter','Vegan-friendly','Gluten-free injera (teff)']},
+  playa:{name:'Playa Bowls',cuisine:'Açaí',price:'$$',dist:0.5,wait:7,tags:['cafe','fast','vegan'],open:true,late:false,badge:'🌺 Healthy pick',bg:'bg-acai',pills:[{t:'Open til 9pm',c:'pill-open'},{t:'~7 min',c:'pill-wait'},{t:'$10–$17',c:'pill-price'}],trust:{p:'"Stupid Cupid bowl is the go-to. Great healthy option near campus between classes."',s:'— Kevin L. · 5 check-ins'},menu:'Açaí bowls, pitaya bowls, smoothies. Stupid Cupid, Pineapple Mango, Tropical Storm.',diet:['Vegan','Gluten-free','Dairy-free options']},
+  spice6:{name:'Spice 6',cuisine:'Indian',price:'$',dist:0.5,wait:8,tags:['asian','fast','vegan','halal'],open:true,late:false,badge:'🍛 Chipotle-style',bg:'bg-india',pills:[{t:'Open til 9pm',c:'pill-open'},{t:'~8 min',c:'pill-wait'},{t:'$10–$16',c:'pill-price'}],trust:{p:'"Indian food served Chipotle-style. The naan pizza with tikka masala is $14 and legitimately massive."',s:'— Priya M. · 7 check-ins'},menu:'Naan pizza, tikka masala bowls, saag, dal, basmati rice, samosas.',diet:['Vegetarian','Vegan options','Halal']},
+  busboys:{name:'Busboys & Poets',cuisine:'American',price:'$$',dist:1.5,wait:0,tags:['cafe','sitdown','vegan'],open:true,late:true,badge:'📚 Study spot',bg:'bg-cafe',pills:[{t:'Open late',c:'pill-open'},{t:'Sit-down',c:'pill-wait'},{t:'$15–$30',c:'pill-price'}],trust:{p:'"Vegan nachos are legitimately amazing. Free coffee refills. Great for a long study afternoon."',s:'— Kevin L. · 3 check-ins'},menu:'Vegan nachos, avocado toast, burgers, cocktails, coffee with free refills.',diet:['Strong vegan menu','Gluten-free options']},
+  nandos:{name:"Nando's",cuisine:'Peri-peri chicken',price:'$$',dist:0.5,wait:12,tags:['fast','sitdown'],open:true,late:false,badge:'🍗 South African',bg:'bg-cafe',pills:[{t:'Open til 10pm',c:'pill-open'},{t:'~12 min',c:'pill-wait'},{t:'$15–$22',c:'pill-price'}],trust:{p:'"Chicken sandwich with sweet potato fries is the reliable go-to. Solid group pick."',s:'— Kevin B. · 3 check-ins'},menu:"Peri-peri chicken (whole, half, quarter), chicken sandwich, wraps, sweet potato fries.",diet:['Gluten-free chicken','Vegetarian halloumi']},
+  saburo:{name:'Saburo Ramen',cuisine:'Japanese',price:'$$',dist:0.8,wait:15,tags:['asian','sitdown'],open:true,late:false,badge:'🍖 Inside Kangnam',bg:'bg-ramen',pills:[{t:'Open til 9pm',c:'pill-open'},{t:'~15 min',c:'pill-wait'},{t:'$12–$16',c:'pill-price'}],trust:{p:'"Get the tonkotsu pork spicy ramen — about $13 with tax. Stick to the ramen menu, skip the KBBQ."',s:'— Player72 · 2 check-ins'},menu:'Tonkotsu pork ramen (regular or spicy), shoyu ramen, gyoza. Located inside Kangnam BBQ at 8503 Route 1.',diet:['Vegetarian broth available']},
+  hanami:{name:'Hanami',cuisine:'Sushi',price:'$$',dist:0.4,wait:20,tags:['asian','sitdown'],open:true,late:false,badge:'🍣 Sushi',bg:'bg-sushi',pills:[{t:'Open til 10pm',c:'pill-open'},{t:'~20 min',c:'pill-wait'},{t:'$15–$25',c:'pill-price'}],trust:{p:'"Same plaza as Taqueria Habanero. Good sushi for the price — solid for College Park."',s:'— imanawkwardloser · 3 check-ins'},menu:'Sushi rolls, sashimi, nigiri, bento boxes, miso soup. Lunch specials.',diet:['Gluten-free soy sauce available']},
+  pupuseria:{name:'Pupuseria La Familiar',cuisine:'Salvadoran',price:'$',dist:0.4,wait:10,tags:['latin','fast'],open:true,late:false,badge:'🫓 3 for $7',bg:'bg-latin',pills:[{t:'Open til 9pm',c:'pill-open'},{t:'~10 min',c:'pill-wait'},{t:'$6–$12',c:'pill-price'}],trust:{p:'"3 pupusas is a solid meal for like $7. Get the carne asada too. Across from The Varsity — slept on."',s:'— d3f3n3strat3 · 2 check-ins'},menu:'Pupusas (cheese, chicharrón, loroco), carne asada, tamales.',diet:['Vegetarian pupusas','Gluten-free options']},
+  jumbojumbo:{name:'Jumbo Jumbo',cuisine:'Taiwanese',price:'$',dist:0.5,wait:12,tags:['asian','fast'],open:true,late:false,badge:'🐔 Taiwanese chicken',bg:'bg-chinese',pills:[{t:'Open til 9pm',c:'pill-open'},{t:'~12 min',c:'pill-wait'},{t:'$10–$15',c:'pill-price'}],trust:{p:'"Taiwanese fried chicken is elite. Shrimp with lobster sauce on rice is also a must. Next to Domain Apartments."',s:'— asianmathmajor · 4 check-ins'},menu:'Taiwanese fried chicken, shrimp with lobster sauce on rice, bubble tea combos.',diet:['Dairy-free options']},
+  tacosmadre:{name:'Tacos a La Madre',cuisine:'Mexican',price:'$',dist:0.7,wait:10,tags:['mexican','fast','vegan'],open:true,late:false,badge:'💧 Agua fresca',bg:'bg-mex',pills:[{t:'Open til 9pm',c:'pill-open'},{t:'~10 min',c:'pill-wait'},{t:'$3–$15',c:'pill-price'}],trust:{p:'"Shrimp, al pastor, and fried zucchini tacos at $3.25 each. The specialty fries are a massive portion."',s:'— atlas229999 · 3 check-ins'},menu:'Tacos (shrimp, al pastor, zucchini), specialty fries bundle ($15), agua fresca.',diet:['Vegetarian zucchini tacos','Vegan options']},
+  federalist:{name:'Federalist Pig',cuisine:'BBQ',price:'$$',dist:1.5,wait:15,tags:['sitdown'],open:true,late:false,badge:'🥩 Legit BBQ',bg:'bg-bbq',pills:[{t:'Open til 9pm',c:'pill-open'},{t:'~15 min',c:'pill-wait'},{t:'$15–$25',c:'pill-price'}],trust:{p:'"Legit BBQ on Route 1 near Busboys. Brisket and pulled pork are the real deal."',s:'— imanawkwardloser · 2 check-ins'},menu:'Brisket, pulled pork, ribs, sandwiches, mac & cheese, collard greens.',diet:['Gluten-free meat options']},
+  theHall:{name:'The Hall CP',cuisine:'American',price:'$$',dist:0.6,wait:0,tags:['sitdown','cafe'],open:true,late:true,badge:'🍩 Chicken donut',bg:'bg-bbq',pills:[{t:'Open late',c:'pill-open'},{t:'Bar + kitchen',c:'pill-wait'},{t:'$15–$25',c:'pill-price'}],trust:{p:'"Chicken sandwich on a glazed donut is unhinged in the best way. Good bar — better as a sit-down experience."',s:'— imanawkwardloser · 3 check-ins'},menu:'Donut chicken sandwich, burgers, loaded fries, full bar. Weekend brunch.',diet:['Vegetarian burger available']},
+  ritchies:{name:"Ritchie's Colombian",cuisine:'Colombian',price:'$',dist:0.5,wait:10,tags:['latin','fast'],open:true,late:false,badge:'🫔 Arepas',bg:'bg-latin',pills:[{t:'Open til 8pm',c:'pill-open'},{t:'~10 min',c:'pill-wait'},{t:'$10–$16',c:'pill-price'}],trust:{p:'"Never had a bad meal. 2 empanadas and an arepa for $15. The arepas are incredible and criminally underrated."',s:'— UMD_dobre_sightings · 3 check-ins'},menu:'Arepas, empanadas, bandeja paisa, Colombian breakfast plates.',diet:['Vegetarian arepas available']},
+  yums:{name:"Yum's Express",cuisine:'Chinese',price:'$',dist:0.8,wait:12,tags:['asian','fast'],open:true,late:false,badge:'🥡 Own delivery',bg:'bg-chinese',pills:[{t:'Open til 9pm',c:'pill-open'},{t:'~12 min',c:'pill-wait'},{t:'$10–$15',c:'pill-price'}],trust:{p:'"Pork lo mein is the move. They have their own driver so you can tip directly without third-party fees."',s:'— Undercoverbazooka · 2 check-ins'},menu:'Pork lo mein, orange chicken, fried rice, General Tso, combo plates.',diet:['Vegetarian fried rice']},
+  franklinsbeer:{name:"Franklin's",cuisine:'American',price:'$$$',dist:1.8,wait:0,tags:['sitdown'],open:true,late:true,badge:'🍺 Craft beer + pizza',bg:'bg-cafe',pills:[{t:'Open late',c:'pill-open'},{t:'Sit-down',c:'pill-wait'},{t:'$15–$25',c:'pill-price'}],trust:{p:'"Good beer, good pizzas, great bratwurst. The gift shop has craft beer, hot sauces, and mead. Better when you\'re 21."',s:'— JimJamb0rino · 4 check-ins'},menu:'Artisan pizza, bratwurst, burgers, craft beer. Gift shop with hot sauces, mead, candy.',diet:['Vegetarian pizza available']},
+  northwest:{name:'Northwest Chinese',cuisine:'Chinese',price:'$',dist:1.0,wait:10,tags:['asian','fast'],open:true,late:false,badge:'🥢 Cold noodles',bg:'bg-chinese',pills:[{t:'Open til 8pm',c:'pill-open'},{t:'~10 min',c:'pill-wait'},{t:'$9–$14',c:'pill-price'}],trust:{p:'"Amazing cold noodles — genuinely unlike anything else on Route 1. Super underrated Chinese spot."',s:'— Striking-Safe-3103 · 2 check-ins'},menu:'Cold noodles, dumplings, braised pork rice, mapo tofu, scallion pancake.',diet:['Vegetarian dumplings','Vegan noodles']},
+  latao:{name:'LaTao Hot Pot',cuisine:'Chinese',price:'$$$',dist:0.9,wait:30,tags:['asian','sitdown'],open:true,late:false,badge:'🫕 Hot pot',bg:'bg-chinese',pills:[{t:'Open til 10pm',c:'pill-open'},{t:'~30 min',c:'pill-wait'},{t:'$25–$45',c:'pill-price'}],trust:{p:'"Pricey but all hot pot is great. The sushi side is actually affordable. Good for a special dinner."',s:'— JimJamb0rino · 2 check-ins'},menu:'All-you-can-eat hot pot, sushi, Korean BBQ fusion. Premium broth options.',diet:['Vegan broth available','Gluten-free dipping options']},
+  eddiescafe:{name:"Eddie's Café",cuisine:'Chinese-American',price:'$',dist:1.2,wait:10,tags:['asian','fast'],open:true,late:false,badge:'🍊 Off Rhode Island',bg:'bg-chinese',pills:[{t:'Open til 8pm',c:'pill-open'},{t:'~10 min',c:'pill-wait'},{t:'$8–$14',c:'pill-price'}],trust:{p:'"Orange chicken, fried rice — all the classics done well. Off Rhode Island Ave, slightly off the beaten path but worth it."',s:'— fifapotato88 · 2 check-ins'},menu:'Orange chicken, fried rice, lo mein, beef with broccoli, spring rolls.',diet:['Vegetarian fried rice']}
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let savedSet = new Set();
+let checkins = [];
+let currentKey = null;
+let voteOptions = ['habanero','qu','aroy'];
+let voteCount = {habanero:3,qu:1,aroy:0};
+let myVote = 'habanero';
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+const pages = ['home','filter','group','friends','saved','profile'];
+function go(id) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.querySelector('.main-scroll').scrollTop = 0;
+  pages.forEach(pg=>{
+    const isA = pg===id;
+    ['sb-','mn-'].forEach(pre=>{
+      const el = document.getElementById(pre+pg);
+      if(!el) return;
+      el.classList.toggle('active', isA);
+      el.querySelectorAll('path,circle,line,polyline').forEach(e=>e.setAttribute('stroke',isA?'#FFD200':'#666'));
+    });
+  });
+  if(id==='saved') renderSaved();
+  if(id==='profile') renderProfile();
+  if(id==='group') renderGroup();
+}
+
+// ── HOME ──────────────────────────────────────────────────────────────────────
+function renderHome(filter) {
+  const all = Object.entries(R);
+  let list = all;
+  if(filter==='open') list=all.filter(([,r])=>r.open);
+  else if(filter==='budget') list=all.filter(([,r])=>r.price==='$');
+  else if(filter==='fast') list=all.filter(([,r])=>r.tags.includes('fast'));
+  else if(filter==='sitdown') list=all.filter(([,r])=>r.tags.includes('sitdown'));
+  else if(filter==='cafe') list=all.filter(([,r])=>r.tags.includes('cafe'));
+  else if(filter==='vegan') list=all.filter(([,r])=>r.tags.includes('vegan'));
+  else if(filter==='halal') list=all.filter(([,r])=>r.tags.includes('halal'));
+
+  const forYou = list.slice(0,3);
+  const budget = list.filter(([,r])=>r.price==='$').slice(0,6);
+  const more = list.slice(3, list.length>6?9:list.length);
+  const worth = list.filter(([,r])=>r.dist>1).slice(0,4);
+
+  let h = '';
+  h += `<div class="slabel">For You — based on your preferences</div><div class="cgrid">`;
+  forYou.forEach(([k,r])=>{ h+=rCard(k,r); });
+  h += `</div>`;
+  if(budget.length){ h+=`<div class="slabel">Budget picks · Under $15</div><div class="mrow">`; budget.forEach(([k,r])=>{h+=rMini(k,r);}); h+=`</div>`; }
+  if(more.length){ h+=`<div class="slabel">More nearby</div><div class="cgrid">`; more.forEach(([k,r])=>{h+=rCard(k,r);}); h+=`</div>`; }
+  if(worth.length){ h+=`<div class="slabel">Worth the trip</div><div class="cgrid">`; worth.forEach(([k,r])=>{h+=rCard(k,r);}); h+=`</div>`; }
+  h += `<div style="height:20px;"></div>`;
+  document.getElementById('home-content').innerHTML = h;
+}
+
+function rCard(k,r){
+  return `<div class="rcard" onclick="showDetail('${k}')">
+    <div class="rimg"><div class="rimg-bg ${r.bg}"></div><div class="rimg-ov"></div><div class="rbadge">${r.badge}</div><div class="rdist">${r.dist} mi</div></div>
+    <div class="rbody">
+      <div class="rname">${r.name}</div>
+      <div class="rmeta"><span class="rprice">${r.price}</span><div class="dot"></div><span>${r.cuisine}</span><div class="dot"></div><span>~${r.wait||'—'} min</span><div class="dot"></div><span style="color:var(--green);">${r.open?'Open':'Closed'}</span></div>
+      <div class="rtrust">${r.trust.p.substring(0,95)}... <span style="color:var(--text-muted);font-size:11px;">${r.trust.s}</span></div>
+    </div>
+  </div>`;
+}
+
+function rMini(k,r){
+  return `<div class="mcard" onclick="showDetail('${k}')">
+    <div class="mimg"><div class="mimg-bg ${r.bg}"></div><div class="mimg-ov"></div><div class="mbadge">${r.price} · ${r.dist} mi</div></div>
+    <div class="mbody"><div class="mname">${r.name}</div><div class="msub">${r.cuisine} · ${r.wait} min</div></div>
+  </div>`;
+}
+
+function filterChip(el, val) {
+  document.querySelectorAll('#home-chips .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderHome(val);
+}
+
+// ── DETAIL ────────────────────────────────────────────────────────────────────
+function showDetail(key) {
+  const r = R[key]; if(!r) return;
+  currentKey = key;
+  document.getElementById('dname').textContent = r.name;
+  document.getElementById('dsub').textContent = `${r.cuisine} · ${r.price} · ${r.dist} mi away`;
+  document.getElementById('dhero-bg').className = 'dhero-bg '+r.bg;
+  document.getElementById('dpills').innerHTML = r.pills.map(p=>`<div class="pill ${p.c}">${p.t}</div>`).join('');
+  document.getElementById('dtrust').innerHTML = `<p>${r.trust.p}</p><p class="src">${r.trust.s}</p>`;
+  document.getElementById('dmenu').textContent = r.menu;
+  document.getElementById('ddiet').innerHTML = r.diet.map(d=>`<div class="dtag">✓ ${d}</div>`).join('');
+  const isSaved = savedSet.has(key);
+  const sb = document.getElementById('save-btn');
+  sb.textContent = isSaved ? '♥ Saved' : '♡ Save';
+  sb.className = 'abtn'+(isSaved?' saved-active':'');
+  const cb = document.getElementById('checkin-btn');
+  cb.textContent = 'Been Here — Check In'; cb.className = 'checkin-btn';
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-detail').classList.add('active');
+  document.querySelector('.main-scroll').scrollTop = 0;
+  pages.forEach(pg=>{
+    ['sb-','mn-'].forEach(pre=>{const el=document.getElementById(pre+pg);if(el){el.classList.remove('active');el.querySelectorAll('path,circle,line,polyline').forEach(e=>e.setAttribute('stroke','#666'));}});
+  });
+}
+
+function toggleSave() {
+  if(!currentKey) return;
+  if(savedSet.has(currentKey)){ savedSet.delete(currentKey); showToast('Removed from saved'); }
+  else { savedSet.add(currentKey); showToast('Saved! ♥'); }
+  const isSaved = savedSet.has(currentKey);
+  const sb = document.getElementById('save-btn');
+  sb.textContent = isSaved?'♥ Saved':'♡ Save';
+  sb.className = 'abtn'+(isSaved?' saved-active':'');
+  updateStats();
+}
+
+function saveFromFeed(key) { savedSet.add(key); showToast(`Saved ${R[key]?.name}! ♥`); updateStats(); }
+
+function checkIn() {
+  if(!currentKey) return;
+  const btn = document.getElementById('checkin-btn');
+  btn.textContent = '✓ Checked In!'; btn.className = 'checkin-btn done';
+  const r = R[currentKey];
+  if(!checkins.find(h=>h.key===currentKey)) checkins.unshift({key:currentKey,name:r.name,cuisine:r.cuisine,price:r.price,date:'Today'});
+  updateStats(); showToast(`Checked into ${r.name}!`);
+}
+
+// ── SAVED ─────────────────────────────────────────────────────────────────────
+function renderSaved() {
+  const el = document.getElementById('saved-content');
+  if(!savedSet.size){ el.innerHTML=`<div class="empty-state">No saved spots yet.<br>Tap ♡ on any restaurant to save it here.<br><br><small style="color:var(--text-muted);">Tip: you can also save from the Friends Feed.</small></div>`; return; }
+  let h = `<div class="saved-grid">`;
+  savedSet.forEach(k=>{const r=R[k];if(!r)return;h+=`<div class="saved-item" onclick="showDetail('${k}')"><div><div class="saved-name">${r.name}</div><div class="saved-meta">${r.cuisine} · ${r.price} · ${r.dist} mi</div></div><div class="saved-remove" onclick="event.stopPropagation();unsave('${k}')">×</div></div>`;});
+  h+=`</div>`;
+  el.innerHTML = h;
+}
+function unsave(key){ savedSet.delete(key); renderSaved(); updateStats(); showToast('Removed from saved'); }
+
+// ── GROUP ─────────────────────────────────────────────────────────────────────
+function renderGroup() {
+  const sg = document.getElementById('gsugg');
+  if(sg) sg.innerHTML = Object.entries(R).slice(0,12).map(([k,r])=>`<div class="gchip" onclick="addToVote('${k}')">${r.name}</div>`).join('');
+  renderVoteCards();
+}
+function addToVote(key) {
+  if(voteOptions.includes(key)){ showToast('Already in the vote!'); return; }
+  voteOptions.push(key); voteCount[key]=0; renderVoteCards(); showToast(`Added ${R[key].name} to the vote`);
+}
+function renderVoteCards() {
+  const el = document.getElementById('vcards'); if(!el) return;
+  const total = Object.values(voteCount).reduce((a,b)=>a+b,0);
+  const maxV = Math.max(...voteOptions.map(k=>voteCount[k]||0));
+  el.innerHTML = voteOptions.map(k=>{
+    const r=R[k]; const v=voteCount[k]||0; const pct=total>0?Math.round(v/total*100):0; const leading=v===maxV&&v>0;
+    return `<div class="vcard${myVote===k?' picked':''}" onclick="castVote('${k}')">
+      <div class="vheader"><div class="vname">${r.name}</div>${leading?'<div class="vtag">Leading</div>':''}</div>
+      <div class="vmeta">${r.cuisine} · ${r.price} · ${r.dist} mi · ${r.open?'Open now':'Closed'}</div>
+      <div class="vbar-bg"><div class="vbar" style="width:${pct}%"></div></div>
+      <div class="vcount">${v} of ${total} voted</div>
+    </div>`;
+  }).join('');
+  const top = voteOptions.slice().sort((a,b)=>(voteCount[b]||0)-(voteCount[a]||0))[0];
+  if(top && (voteCount[top]||0)>0){
+    const r=R[top];
+    document.getElementById('win-name').textContent = `${r.name} wins!`;
+    document.getElementById('win-sub').textContent = `${r.dist} mi · ${r.cuisine} · ${r.price}`;
+  }
+}
+function castVote(key) {
+  if(myVote) voteCount[myVote]=Math.max(0,(voteCount[myVote]||1)-1);
+  myVote=key; voteCount[key]=(voteCount[key]||0)+1; renderVoteCards();
+}
+
+// ── PROFILE ───────────────────────────────────────────────────────────────────
+function renderProfile() {
+  updateStats();
+  const h = document.getElementById('visit-history');
+  h.innerHTML = checkins.length ? checkins.map(c=>`<div class="hist"><div><div class="hname">${c.name}</div><div class="hsub">${c.cuisine} · ${c.price}</div></div><div class="hdate">${c.date}</div></div>`).join('') : `<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">No visits yet — check in after eating!</div>`;
+}
+function updateStats(){
+  const ci=document.getElementById('stat-ci');const sv=document.getElementById('stat-sv');
+  if(ci)ci.textContent=checkins.length;if(sv)sv.textContent=savedSet.size;
+}
+
+// ── SURPRISE ME ───────────────────────────────────────────────────────────────
+const rkeys=Object.keys(R);let sIdx=0;
+function surpriseMe(){ showDetail(rkeys[sIdx++%rkeys.length]); }
+
+// ── FILTER HELPERS ────────────────────────────────────────────────────────────
+function tF(el){el.classList.toggle('sel');}
+function tP(el){el.classList.toggle('sel');}
+function clearFilters(){document.querySelectorAll('.fopt,.popt').forEach(o=>o.classList.remove('sel'));}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let tTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(tTimer);tTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderHome('all');
+</script>
+</body>
+</html>
