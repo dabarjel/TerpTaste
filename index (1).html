@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TerpTaste — UMD Food Discovery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --red:#E03A3E;--gold:#FFD200;--gold-dim:#9A7F00;
+  --bg:#111;--surface:#1C1C1C;--surface2:#242424;--surface3:#2C2C2C;
+  --border:#2E2E2E;--border2:#3E3E3E;
+  --text-primary:#F0EFEB;--text-secondary:#AAA;--text-muted:#666;
+  --green:#3DCB7A;
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:#0A0A0A;}
+
+.app-shell{display:flex;height:100vh;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 16px;flex-shrink:0;}
+.sidebar-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text-primary);margin-bottom:28px;padding:0 8px;}
+.sidebar-logo span{color:var(--red);}
+.sidebar-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:4px;color:var(--text-muted);}
+.sidebar-nav-item:hover{background:var(--surface2);color:var(--text-secondary);}
+.sidebar-nav-item.active{background:var(--surface3);color:var(--text-primary);}
+.sidebar-nav-item span{font-size:14px;font-weight:500;}
+.sidebar-user{margin-top:auto;display:flex;align-items:center;gap:10px;padding-top:16px;border-top:1px solid var(--border);}
+.sidebar-avatar{width:32px;height:32px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.sidebar-user-name{font-size:13px;font-weight:600;color:var(--text-primary);}
+.sidebar-user-sub{font-size:11px;color:var(--text-muted);}
+
+/* MAIN */
+.main-area{flex:1;overflow:hidden;display:flex;flex-direction:column;background:var(--bg);}
+.main-scroll{flex:1;overflow-y:auto;overflow-x:hidden;}
+.main-scroll::-webkit-scrollbar{width:6px;}
+.main-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* HEADER */
+.panel-header{padding:24px 28px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:10;}
+.panel-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--text-primary);}
+.location-pill{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text-secondary);margin-top:5px;}
+.location-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.surprise-btn{background:var(--gold);color:#111;border:none;border-radius:12px;padding:10px 20px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.surprise-btn:active{transform:scale(0.97);}
+
+/* CHIPS */
+.chips{padding:14px 28px 10px;display:flex;gap:8px;overflow-x:auto;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:500;color:var(--text-secondary);white-space:nowrap;cursor:pointer;flex-shrink:0;}
+.chip.active{background:var(--surface3);color:var(--text-primary);border-color:var(--border2);}
+
+/* SECTION LABEL */
+.section-label{padding:18px 28px 10px;font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;}
+
+/* CARD GRID */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:0 28px 8px;}
+
+/* RESTAURANT CARD */
+.rest-card{background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:border-color 0.15s,transform 0.1s;}
+.rest-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.rest-card:active{transform:scale(0.99);}
+.rest-img{height:130px;position:relative;display:flex;align-items:flex-end;justify-content:space-between;padding:10px 12px;}
+.rest-img-bg{position:absolute;inset:0;}
+.rest-img-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.72) 100%);}
+.rest-badge{position:relative;z-index:1;background:rgba(255,210,0,0.15);border:1px solid rgba(255,210,0,0.35);border-radius:7px;padding:3px 8px;font-size:11px;font-weight:600;color:var(--gold);}
+.rest-distance{position:relative;z-index:1;background:rgba(0,0,0,0.55);color:#fff;border-radius:7px;padding:3px 8px;font-size:11px;font-weight:500;}
+.rest-body{padding:12px 14px 14px;}
+.rest-name{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--text-primary);margin-bottom:5px;line-height:1.2;}
+.rest-meta{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);}
+.rest-price{font-weight:600;color:var(--green);}
+.dot{width:2px;height:2px;background:var(--border2);border-radius:50%;flex-shrink:0;}
+.rest-trust{margin-top:10px;background:var(--surface2);border-left:2px solid var(--gold-dim);border-radius:0 8px 8px 0;padding:8px 10px;font-size:12px;color:var(--text-secondary);line-height:1.5;}
+.trust-name{font-weight:600;color:var(--text-primary);}
+.friend-dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:4px;font-size:7px;color:#fff;text-align:center;line-height:14px;font-weight:700;}
+
+/* MINI ROW */
+.mini-row{padding:0 28px;display:flex;gap:10px;overflow-x:auto;margin-bottom:6px;}
+.mini-row::-webkit-scrollbar{display:none;}
+.mini-card{min-width:150px;background:var(--surface);border-radius:14px;border:1px solid var(--border);overflow:hidden;cursor:pointer;flex-shrink:0;transition:border-color 0.15s;}
+.mini-card:hover{border-color:var(--border2);}
+.mini-img{height:84px;position:relative;}
+.mini-img-bg{position:absolute;inset:0;}
+.mini-img-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,rgba(0,0,0,0.75));}
+.mini-badge{position:absolute;bottom:6px;left:8px;z-index:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:6px;padding:2px 7px;font-size:10px;font-weight:600;color:#fff;}
+.mini-body{padding:8px 10px 10px;}
+.mini-name{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px;}
+.mini-sub{font-size:11px;color:var(--text-muted);}
+
+/* BG COLORS */
+.bg-mex{background:#2A1510;}
+.bg-thai{background:#1E1428;}
+.bg-greek{background:#141C2A;}
+.bg-eth{background:#1E1408;}
+.bg-ramen{background:#1E1208;}
+.bg-cafe{background:#1A1310;}
+.bg-india{background:#1E1228;}
+.bg-acai{background:#1A1028;}
+
+/* DETAIL */
+.detail-hero{height:220px;position:relative;display:flex;align-items:flex-end;flex-shrink:0;}
+.detail-hero-bg{position:absolute;inset:0;}
+.detail-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.85) 100%);}
+.detail-title{position:relative;z-index:2;padding:0 28px 18px;}
+.detail-name{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#fff;margin-bottom:4px;}
+.detail-sub{font-size:13px;color:rgba(255,255,255,0.6);}
+.detail-body{padding:20px 28px;}
+.back-btn-inline{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-secondary);display:inline-flex;align-items:center;gap:6px;margin-bottom:18px;font-family:'DM Sans',sans-serif;}
+.back-btn-inline:hover{color:var(--text-primary);}
+.pills-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;}
+.dpill{border-radius:8px;padding:5px 11px;font-size:12px;font-weight:500;}
+.dpill-open{background:rgba(61,203,122,0.12);color:var(--green);border:1px solid rgba(61,203,122,0.25);}
+.dpill-wait{background:rgba(255,180,50,0.1);color:#FFB432;border:1px solid rgba(255,180,50,0.2);}
+.dpill-price{background:var(--surface2);color:var(--text-secondary);border:1px solid var(--border);}
+.detail-cols{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.dsection{font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
+.trust-block{background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:18px;border-left:3px solid var(--gold-dim);}
+.trust-block p{font-size:13px;color:var(--text-secondary);line-height:1.6;font-style:italic;}
+.trust-block .src{font-size:11px;color:var(--text-muted);margin-top:5px;font-style:normal;}
+.detail-menu-text{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:18px;}
+.dietary-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;}
+.dtag{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--text-secondary);}
+.action-row-d{display:flex;gap:10px;margin-bottom:10px;}
+.abtn{border-radius:10px;padding:11px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.abtn-sec{background:var(--surface2);color:var(--text-primary);border:1px solid var(--border);}
+.abtn-sec:hover{border-color:var(--border2);}
+.checkin-btn{background:var(--red);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;display:block;width:100%;}
+
+/* FILTER */
+.filter-body{padding:24px 28px;}
+.fgroup{margin-bottom:24px;}
+.fgroup-title{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;}
+.fopts{display:flex;flex-wrap:wrap;gap:7px;}
+.fopt{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-secondary);font-family:'DM Sans',sans-serif;}
+.fopt.sel{background:var(--surface3);color:var(--text-primary);border-color:var(--border2);}
+.price-grid{display:grid;grid-template-columns:repeat(4,80px);gap:8px;}
+.price-opt{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;color:var(--text-secondary);font-family:'DM Sans',sans-serif;}
+.price-opt.sel{background:var(--surface3);color:var(--gold);border-color:var(--gold-dim);}
+input[type=range]{width:100%;max-width:360px;accent-color:var(--gold);margin:6px 0 4px;display:block;}
+.range-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);max-width:360px;}
+.apply-btn{background:var(--red);color:#fff;border:none;border-radius:12px;padding:13px 32px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
+
+/* GROUP */
+.group-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px 28px;align-items:start;}
+.gl-title{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;}
+.mbrs{display:flex;margin-bottom:16px;}
+.mbr{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;border:2px solid var(--bg);margin-left:-8px;}
+.mbr:first-child{margin-left:0;}
+.vote-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.15s;}
+.vote-card:hover{border-color:var(--border2);}
+.vote-card.picked{border:1px solid var(--red);background:rgba(224,58,62,0.05);}
+.vote-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.vote-name{font-size:14px;font-weight:600;color:var(--text-primary);}
+.vote-tag{font-size:10px;padding:3px 8px;border-radius:6px;font-weight:600;background:rgba(255,210,0,0.1);color:var(--gold);border:1px solid rgba(255,210,0,0.2);}
+.vote-meta{font-size:12px;color:var(--text-muted);margin-bottom:8px;}
+.vbar-bg{background:var(--surface2);border-radius:3px;height:4px;overflow:hidden;}
+.vbar{height:4px;border-radius:3px;background:var(--red);transition:width 0.5s ease;}
+.vcount{font-size:11px;color:var(--text-muted);margin-top:4px;}
+.win-banner{background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:24px;text-align:center;}
+.win-em{font-size:32px;margin-bottom:8px;}
+.win-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text-primary);margin-bottom:4px;}
+.win-sub{font-size:12px;color:var(--text-muted);}
+.invite-btn{width:100%;border:1px dashed var(--border2);background:transparent;border-radius:10px;padding:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-muted);cursor:pointer;margin-bottom:14px;}
+
+/* FRIENDS */
+.feed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:0 28px 28px;}
+.feed-item{background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:14px;}
+.feed-top{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.feed-pfp{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+.feed-who{font-size:13px;font-weight:600;color:var(--text-primary);}
+.feed-when{font-size:11px;color:var(--text-muted);}
+.feed-rest{font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:4px;}
+.feed-quote{font-size:12px;color:var(--text-secondary);line-height:1.5;}
+.feed-actions{display:flex;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.fa{font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;}
+.fa.fire{color:var(--red);}
+
+/* PROFILE */
+.profile-layout{display:grid;grid-template-columns:240px 1fr;gap:24px;padding:24px 28px;align-items:start;}
+.profile-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;}
+.profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px;}
+.profile-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--text-primary);}
+.profile-handle{font-size:12px;color:var(--text-muted);margin-top:3px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;}
+.stat-card{background:var(--surface2);border-radius:12px;padding:12px;text-align:center;}
+.stat-num{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text-primary);}
+.stat-label{font-size:10px;color:var(--text-muted);margin-top:2px;}
+.pref-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+.pref-title{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;}
+.pref-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.ptag{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 11px;font-size:12px;font-weight:500;color:var(--text-secondary);}
+.hist-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.hist-item:last-child{border-bottom:none;}
+.hist-name{font-size:13px;font-weight:600;color:var(--text-primary);}
+.hist-sub{font-size:11px;color:var(--text-muted);margin-top:1px;}
+.hist-date{font-size:12px;color:var(--text-muted);}
+
+/* MOBILE NAV */
+.mobile-nav{display:none;background:var(--surface);border-top:1px solid var(--border);padding:10px 0 env(safe-area-inset-bottom, 14px);flex-shrink:0;}
+.mobile-nav-inner{display:flex;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:4px 0;}
+.nav-label{font-size:10px;color:var(--text-muted);font-weight:500;}
+.nav-item.active .nav-label{color:var(--gold);}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  .sidebar{display:none;}
+  .mobile-nav{display:flex;flex-direction:column;}
+  .panel-header{padding:14px 16px 12px;flex-wrap:wrap;gap:8px;}
+  .panel-title{font-size:20px;}
+  .chips{padding:10px 16px 8px;}
+  .section-label{padding:14px 16px 8px;}
+  .card-grid{grid-template-columns:1fr;padding:0 16px 8px;gap:10px;}
+  .mini-row{padding:0 16px;}
+  .filter-body{padding:16px;}
+  .group-layout{grid-template-columns:1fr;padding:16px;}
+  .feed-grid{grid-template-columns:1fr;padding:0 16px 16px;}
+  .profile-layout{grid-template-columns:1fr;padding:16px;}
+  .detail-title{padding:0 16px 14px;}
+  .detail-body{padding:16px;}
+  .detail-cols{grid-template-columns:1fr;}
+  .detail-name{font-size:22px;}
+  .price-grid{grid-template-columns:repeat(4,1fr);}
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- SIDEBAR (desktop) -->
+  <div class="sidebar">
+    <div class="sidebar-logo">Terp<span>Taste</span></div>
+    <div class="sidebar-nav-item active" id="sb-home" onclick="goHome()">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H14v-5H8v5H4a1 1 0 01-1-1V9.5z" stroke="#FFD200" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="sidebar-nav-item" id="sb-filter" onclick="goFilter()">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 5h16M6 11h10M9 17h4" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>Filter</span>
+    </div>
+    <div class="sidebar-nav-item" id="sb-group" onclick="goGroup()">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="#666" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="#666" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>Group Vote</span>
+    </div>
+    <div class="sidebar-nav-item" id="sb-friends" onclick="goFriends()">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M19 14c0 1-1 2-2 2H7l-4 4V5c0-1 1-2 2-2h12c1 0 2 1 2 2v9z" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Friends</span>
+    </div>
+    <div class="sidebar-nav-item" id="sb-profile" onclick="goProfile()">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="#666" stroke-width="1.5"/><path d="M4 19c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>Profile</span>
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">DL</div>
+      <div>
+        <div class="sidebar-user-name">Dan L.</div>
+        <div class="sidebar-user-sub">UMD '27</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div class="main-area">
+    <div class="main-scroll">
+
+      <!-- HOME -->
+      <div class="panel active" id="panel-home">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Discover</div>
+            <div class="location-pill"><div class="location-dot"></div>College Park · Near Campus</div>
+          </div>
+          <button class="surprise-btn" onclick="showSurprise()">🎲 Surprise Me</button>
+        </div>
+        <div class="chips">
+          <div class="chip active">All</div>
+          <div class="chip" onclick="goFilter()">Open Now</div>
+          <div class="chip" onclick="goFilter()">Under $15</div>
+          <div class="chip" onclick="goFilter()">Fast Food</div>
+          <div class="chip" onclick="goFilter()">Sit-Down</div>
+          <div class="chip" onclick="goFilter()">Café</div>
+          <div class="chip" onclick="goFilter()">Vegan</div>
+          <div class="chip" onclick="goFilter()">Halal</div>
+        </div>
+
+        <div class="section-label">Friends ate here recently</div>
+        <div class="card-grid">
+          <div class="rest-card" onclick="showDetail('habanero')">
+            <div class="rest-img"><div class="rest-img-bg bg-mex"></div><div class="rest-img-overlay"></div><div class="rest-badge">⭐ Michelin Bib</div><div class="rest-distance">0.4 mi</div></div>
+            <div class="rest-body">
+              <div class="rest-name">Taqueria Habanero</div>
+              <div class="rest-meta"><span class="rest-price">$$</span><div class="dot"></div><span>Mexican</span><div class="dot"></div><span>~10 min</span><div class="dot"></div><span style="color:var(--green);">Open til 10pm</span></div>
+              <div class="rest-trust"><span class="friend-dot" style="background:#E03A3E;">J</span><span class="trust-name">Jordan</span>: "Best tacos near campus, not even close. Al pastor and tinga are elite."</div>
+            </div>
+          </div>
+          <div class="rest-card" onclick="showDetail('aroy')">
+            <div class="rest-img"><div class="rest-img-bg bg-thai"></div><div class="rest-img-overlay"></div><div class="rest-badge">🌶 Hidden gem</div><div class="rest-distance">0.6 mi</div></div>
+            <div class="rest-body">
+              <div class="rest-name">Aroy Thai</div>
+              <div class="rest-meta"><span class="rest-price">$</span><div class="dot"></div><span>Thai</span><div class="dot"></div><span>~10 min</span><div class="dot"></div><span style="color:var(--green);">Open til 8:30pm</span></div>
+              <div class="rest-trust"><span class="friend-dot" style="background:#3D7EBF;">A</span><span class="trust-name">Aisha</span>: "Drunken noodles changed me. Huge portions. Walkable from McKeldin."</div>
+            </div>
+          </div>
+          <div class="rest-card" onclick="showDetail('qu')">
+            <div class="rest-img"><div class="rest-img-bg bg-ramen"></div><div class="rest-img-overlay"></div><div class="rest-badge">🍜 Ramen + hibachi</div><div class="rest-distance">0.3 mi</div></div>
+            <div class="rest-body">
+              <div class="rest-name">Qu Japan</div>
+              <div class="rest-meta"><span class="rest-price">$$</span><div class="dot"></div><span>Japanese</span><div class="dot"></div><span>~15 min</span><div class="dot"></div><span style="color:var(--green);">Open til 10pm</span></div>
+              <div class="rest-trust"><span class="friend-dot" style="background:#9B59B6;">S</span><span class="trust-name">Simone</span>: "Chicken teriyaki ramen is 🔥. Pay cash for 5% off."</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label">Budget picks · Under $10</div>
+        <div class="mini-row">
+          <div class="mini-card" onclick="showDetail('marathon')"><div class="mini-img"><div class="mini-img-bg bg-greek"></div><div class="mini-img-overlay"></div><div class="mini-badge">$ · 0.4 mi</div></div><div class="mini-body"><div class="mini-name">Marathon Deli</div><div class="mini-sub">Greek · Late night</div></div></div>
+          <div class="mini-card" onclick="showDetail('playa')"><div class="mini-img"><div class="mini-img-bg bg-acai"></div><div class="mini-img-overlay"></div><div class="mini-badge">$$ · 0.5 mi</div></div><div class="mini-body"><div class="mini-name">Playa Bowls</div><div class="mini-sub">Açaí · Healthy</div></div></div>
+          <div class="mini-card" onclick="showDetail('spice6')"><div class="mini-img"><div class="mini-img-bg bg-india"></div><div class="mini-img-overlay"></div><div class="mini-badge">$ · 0.5 mi</div></div><div class="mini-body"><div class="mini-name">Spice 6</div><div class="mini-sub">Indian · Quick</div></div></div>
+          <div class="mini-card" onclick="showDetail('busboys')"><div class="mini-img"><div class="mini-img-bg bg-cafe"></div><div class="mini-img-overlay"></div><div class="mini-badge">$$ · 1.5 mi</div></div><div class="mini-body"><div class="mini-name">Busboys & Poets</div><div class="mini-sub">American · Study</div></div></div>
+        </div>
+
+        <div class="section-label">Worth the trip</div>
+        <div class="card-grid">
+          <div class="rest-card" onclick="showDetail('shagga')">
+            <div class="rest-img"><div class="rest-img-bg bg-eth"></div><div class="rest-img-overlay"></div><div class="rest-badge">🌍 Fan favorite</div><div class="rest-distance">1.8 mi</div></div>
+            <div class="rest-body">
+              <div class="rest-name">Shagga Ethiopian</div>
+              <div class="rest-meta"><span class="rest-price">$$</span><div class="dot"></div><span>Ethiopian · Hyattsville</span><div class="dot"></div><span style="color:var(--green);">Open til 10pm</span></div>
+              <div class="rest-trust"><span class="friend-dot" style="background:#2A9D60;">M</span><span class="trust-name">Marcus</span>: "Combo platter fed 3 of us. $16 each, stuffed. Best Ethiopian near campus."</div>
+            </div>
+          </div>
+          <div class="rest-card" onclick="showDetail('nandos')">
+            <div class="rest-img"><div class="rest-img-bg bg-cafe"></div><div class="rest-img-overlay"></div><div class="rest-badge">🍗 South African</div><div class="rest-distance">0.5 mi</div></div>
+            <div class="rest-body">
+              <div class="rest-name">Nando's</div>
+              <div class="rest-meta"><span class="rest-price">$$</span><div class="dot"></div><span>Peri-peri chicken</span><div class="dot"></div><span style="color:var(--green);">Open til 10pm</span></div>
+              <div class="rest-trust"><span class="friend-dot" style="background:#E67E22;">K</span><span class="trust-name">Kevin</span>: "Chicken sandwich with sweet potato fries. Solid reliable pick."</div>
+            </div>
+          </div>
+        </div>
+        <div style="height:20px;"></div>
+      </div>
+
+      <!-- DETAIL -->
+      <div class="panel" id="panel-detail">
+        <div class="detail-hero">
+          <div class="detail-hero-bg" id="detail-hero-bg"></div>
+          <div class="detail-hero-overlay"></div>
+          <div class="detail-title">
+            <div class="detail-name" id="detail-name"></div>
+            <div class="detail-sub" id="detail-sub"></div>
+          </div>
+        </div>
+        <div class="detail-body">
+          <button class="back-btn-inline" onclick="goHome()">← Back to results</button>
+          <div class="pills-row" id="detail-pills"></div>
+          <div class="detail-cols">
+            <div>
+              <div class="dsection">From your people</div>
+              <div class="trust-block" id="detail-trust"></div>
+              <div class="dsection">On the menu</div>
+              <div class="detail-menu-text" id="detail-menu"></div>
+            </div>
+            <div>
+              <div class="dsection">Dietary info</div>
+              <div class="dietary-tags" id="detail-dietary"></div>
+              <div class="action-row-d">
+                <button class="abtn abtn-sec" onclick="goGroup()">Suggest to Group →</button>
+                <button class="abtn abtn-sec" onclick="saveRest()">Save ♡</button>
+              </div>
+              <button class="checkin-btn" id="checkin-btn" onclick="checkIn()">Been Here — Check In</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTER -->
+      <div class="panel" id="panel-filter">
+        <div class="panel-header">
+          <div><div class="panel-title">Filter</div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Narrow down your options</div></div>
+          <div style="font-size:13px;color:var(--red);cursor:pointer;font-weight:600;" onclick="clearFilters()">Clear all</div>
+        </div>
+        <div class="filter-body">
+          <div class="fgroup">
+            <div class="fgroup-title">Cuisine type</div>
+            <div class="fopts">
+              <div class="fopt sel" onclick="toggleFilter(this)">All</div>
+              <div class="fopt" onclick="toggleFilter(this)">Fast Food</div>
+              <div class="fopt" onclick="toggleFilter(this)">Sit-Down</div>
+              <div class="fopt" onclick="toggleFilter(this)">Café</div>
+              <div class="fopt" onclick="toggleFilter(this)">Asian</div>
+              <div class="fopt" onclick="toggleFilter(this)">Mexican</div>
+              <div class="fopt" onclick="toggleFilter(this)">Ethiopian</div>
+              <div class="fopt" onclick="toggleFilter(this)">Indian</div>
+              <div class="fopt" onclick="toggleFilter(this)">Mediterranean</div>
+              <div class="fopt" onclick="toggleFilter(this)">Pizza</div>
+              <div class="fopt" onclick="toggleFilter(this)">BBQ</div>
+              <div class="fopt" onclick="toggleFilter(this)">Latin</div>
+            </div>
+          </div>
+          <div class="fgroup">
+            <div class="fgroup-title">Price range</div>
+            <div class="price-grid">
+              <div class="price-opt sel" onclick="togglePrice(this)">$</div>
+              <div class="price-opt sel" onclick="togglePrice(this)">$$</div>
+              <div class="price-opt" onclick="togglePrice(this)">$$$</div>
+              <div class="price-opt" onclick="togglePrice(this)">$$$$</div>
+            </div>
+          </div>
+          <div class="fgroup">
+            <div class="fgroup-title">Max distance: <span id="dist-val">0.5</span> mi</div>
+            <input type="range" min="1" max="30" value="5" step="1" oninput="document.getElementById('dist-val').textContent=(this.value/10).toFixed(1)">
+            <div class="range-labels"><span>0.1 mi</span><span>3.0 mi</span></div>
+          </div>
+          <div class="fgroup">
+            <div class="fgroup-title">Dietary needs</div>
+            <div class="fopts">
+              <div class="fopt" onclick="toggleFilter(this)">Vegetarian</div>
+              <div class="fopt" onclick="toggleFilter(this)">Vegan</div>
+              <div class="fopt" onclick="toggleFilter(this)">Gluten-Free</div>
+              <div class="fopt" onclick="toggleFilter(this)">Halal</div>
+              <div class="fopt" onclick="toggleFilter(this)">Kosher</div>
+              <div class="fopt" onclick="toggleFilter(this)">Dairy-Free</div>
+            </div>
+          </div>
+          <div class="fgroup">
+            <div class="fgroup-title">Hours</div>
+            <div class="fopts">
+              <div class="fopt sel" onclick="toggleFilter(this)">Open Now</div>
+              <div class="fopt" onclick="toggleFilter(this)">Open Late (10pm+)</div>
+              <div class="fopt" onclick="toggleFilter(this)">Breakfast</div>
+            </div>
+          </div>
+          <button class="apply-btn" onclick="goHome()">Show Results →</button>
+        </div>
+      </div>
+
+      <!-- GROUP -->
+      <div class="panel" id="panel-group">
+        <div class="panel-header"><div><div class="panel-title">Group Vote</div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Settle it in 60 seconds</div></div></div>
+        <div class="group-layout">
+          <div>
+            <div class="gl-title">In this session</div>
+            <div class="mbrs">
+              <div class="mbr" style="background:#E03A3E;">DL</div>
+              <div class="mbr" style="background:#3D7EBF;">AK</div>
+              <div class="mbr" style="background:#2A9D60;">JT</div>
+              <div class="mbr" style="background:#9B59B6;">MR</div>
+            </div>
+            <button class="invite-btn">+ Invite by link</button>
+            <div class="gl-title" style="margin-bottom:10px;">Cast your vote</div>
+            <div class="vote-card picked" id="vote-hab" onclick="castVote('hab')">
+              <div class="vote-header"><div class="vote-name">Taqueria Habanero</div><div class="vote-tag">Leading</div></div>
+              <div class="vote-meta">Mexican · $$ · 0.4 mi · Open now</div>
+              <div class="vbar-bg"><div class="vbar" style="width:75%"></div></div>
+              <div class="vcount">3 of 4 voted</div>
+            </div>
+            <div class="vote-card" id="vote-qu" onclick="castVote('qu')">
+              <div class="vote-header"><div class="vote-name">Qu Japan</div></div>
+              <div class="vote-meta">Japanese · $$ · 0.3 mi · Open now</div>
+              <div class="vbar-bg"><div class="vbar" style="width:25%"></div></div>
+              <div class="vcount">1 of 4 voted</div>
+            </div>
+            <div class="vote-card" id="vote-aroy" onclick="castVote('aroy')">
+              <div class="vote-header"><div class="vote-name">Aroy Thai</div></div>
+              <div class="vote-meta">Thai · $ · 0.6 mi · Open now</div>
+              <div class="vbar-bg"><div class="vbar" style="width:0%"></div></div>
+              <div class="vcount">0 of 4 voted</div>
+            </div>
+            <button style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;margin-top:4px;" onclick="goHome()">+ Add another option</button>
+          </div>
+          <div>
+            <div class="gl-title" style="margin-bottom:10px;">Result</div>
+            <div class="win-banner" id="win-section">
+              <div class="win-em">🌮</div>
+              <div class="win-name">Taqueria Habanero wins!</div>
+              <div class="win-sub">Decided in 43 seconds · 0.4 mi away</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FRIENDS -->
+      <div class="panel" id="panel-friends">
+        <div class="panel-header"><div><div class="panel-title">Friends Feed</div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Real check-ins, no bots</div></div></div>
+        <div style="height:14px;"></div>
+        <div class="feed-grid">
+          <div class="feed-item">
+            <div class="feed-top"><div class="feed-pfp" style="background:#E03A3E;">JT</div><div><div class="feed-who">Jordan T.</div><div class="feed-when">2 hours ago</div></div></div>
+            <div class="feed-rest">Taqueria Habanero</div>
+            <div class="feed-quote">"Al pastor and a hibiscus agua fresca — that's the move. Michelin for a reason."</div>
+            <div class="feed-actions"><div class="fa fire">🔥 Same</div><div class="fa">Save spot</div><div class="fa">Send to group</div></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-top"><div class="feed-pfp" style="background:#3D7EBF;">AK</div><div><div class="feed-who">Aisha K.</div><div class="feed-when">Yesterday · 7pm</div></div></div>
+            <div class="feed-rest">Aroy Thai</div>
+            <div class="feed-quote">"Got the drunken noodles on 3-star spice. Do NOT underestimate it. So good though."</div>
+            <div class="feed-actions"><div class="fa fire">🔥 Same</div><div class="fa">Save spot</div><div class="fa">Send to group</div></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-top"><div class="feed-pfp" style="background:#2A9D60;">MR</div><div><div class="feed-who">Marcus R.</div><div class="feed-when">2 days ago</div></div></div>
+            <div class="feed-rest">Shagga Ethiopian</div>
+            <div class="feed-quote">"Ubered over and split the combo platter with 2 friends. $16 each, stuffed. Go."</div>
+            <div class="feed-actions"><div class="fa fire">🔥 Same</div><div class="fa">Save spot</div><div class="fa">Send to group</div></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-top"><div class="feed-pfp" style="background:#9B59B6;">SP</div><div><div class="feed-who">Simone P.</div><div class="feed-when">3 days ago</div></div></div>
+            <div class="feed-rest">Marathon Deli</div>
+            <div class="feed-quote">"Marathon fries at midnight after studying. Classic. $4. They never miss."</div>
+            <div class="feed-actions"><div class="fa fire">🔥 Same</div><div class="fa">Save spot</div><div class="fa">Send to group</div></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-top"><div class="feed-pfp" style="background:#E67E22;">KB</div><div><div class="feed-who">Kevin B.</div><div class="feed-when">4 days ago</div></div></div>
+            <div class="feed-rest">Qu Japan</div>
+            <div class="feed-quote">"Tonkotsu ramen, paid cash, got 5% off. This place is consistently solid."</div>
+            <div class="feed-actions"><div class="fa fire">🔥 Same</div><div class="fa">Save spot</div><div class="fa">Send to group</div></div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-top"><div class="feed-pfp" style="background:#1ABC9C;">PR</div><div><div class="feed-who">Priya R.</div><div class="feed-when">5 days ago</div></div></div>
+            <div class="feed-rest">Spice 6</div>
+            <div class="feed-quote">"Naan pizza with tikka masala. $14 and you'll be full for the rest of the day."</div>
+            <div class="feed-actions"><div class="fa fire">🔥 Same</div><div class="fa">Save spot</div><div class="fa">Send to group</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="panel" id="panel-profile">
+        <div class="panel-header"><div class="panel-title">Profile</div></div>
+        <div class="profile-layout">
+          <div>
+            <div class="profile-card">
+              <div class="profile-avatar">DL</div>
+              <div class="profile-name">Dan L.</div>
+              <div class="profile-handle">UMD '27 · College Park</div>
+              <div class="stats-grid">
+                <div class="stat-card"><div class="stat-num">31</div><div class="stat-label">Check-ins</div></div>
+                <div class="stat-card"><div class="stat-num">8</div><div class="stat-label">Saved</div></div>
+                <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">Friends</div></div>
+                <div class="stat-card"><div class="stat-num">4</div><div class="stat-label">Groups</div></div>
+              </div>
+            </div>
+            <div class="pref-section" style="margin-top:12px;">
+              <div class="pref-title">Preferences</div>
+              <div class="pref-tags">
+                <div class="ptag">Asian</div>
+                <div class="ptag">Under $15</div>
+                <div class="ptag">Quick eats</div>
+                <div class="ptag">Vegan options</div>
+                <div class="ptag">Open late</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="pref-section">
+              <div class="pref-title">Recent visits</div>
+              <div class="hist-item"><div><div class="hist-name">Taqueria Habanero</div><div class="hist-sub">Mexican · $$</div></div><div class="hist-date">Today</div></div>
+              <div class="hist-item"><div><div class="hist-name">Aroy Thai</div><div class="hist-sub">Thai · $</div></div><div class="hist-date">Monday</div></div>
+              <div class="hist-item"><div><div class="hist-name">Qu Japan</div><div class="hist-sub">Japanese · $$</div></div><div class="hist-date">Saturday</div></div>
+              <div class="hist-item"><div><div class="hist-name">Marathon Deli</div><div class="hist-sub">Greek · $</div></div><div class="hist-date">Thursday</div></div>
+              <div class="hist-item"><div><div class="hist-name">Shagga Ethiopian</div><div class="hist-sub">Ethiopian · $$</div></div><div class="hist-date">Last week</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end main-scroll -->
+
+    <!-- MOBILE BOTTOM NAV -->
+    <div class="mobile-nav">
+      <div class="mobile-nav-inner">
+        <div class="nav-item active" id="mn-home" onclick="goHome()">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H14v-5H8v5H4a1 1 0 01-1-1V9.5z" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="nav-label">Home</div>
+        </div>
+        <div class="nav-item" id="mn-filter" onclick="goFilter()">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 5h16M6 11h10M9 17h4" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <div class="nav-label">Filter</div>
+        </div>
+        <div class="nav-item" id="mn-group" onclick="goGroup()">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="#666" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="#666" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#666" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <div class="nav-label">Group</div>
+        </div>
+        <div class="nav-item" id="mn-friends" onclick="goFriends()">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M19 14c0 1-1 2-2 2H7l-4 4V5c0-1 1-2 2-2h12c1 0 2 1 2 2v9z" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="nav-label">Friends</div>
+        </div>
+        <div class="nav-item" id="mn-profile" onclick="goProfile()">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="#666" stroke-width="1.5"/><path d="M4 19c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <div class="nav-label">Profile</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const rests={
+  habanero:{name:'Taqueria Habanero',sub:'Mexican · $$ · 7410 Baltimore Ave',bg:'bg-mex',pills:[{t:'Open til 10pm',c:'dpill-open'},{t:'~10 min wait',c:'dpill-wait'},{t:'$10–$18',c:'dpill-price'}],trust:{p:'"Best tacos in the area, and it\'s not close. Al pastor, tinga, and the polpo (octopus) taco are wild. Michelin Bib Gourmand — for real."',s:'— Jordan T. · 6 check-ins'},menu:'Tacos al pastor, tinga, lengua, polpo. Burritos, enchiladas, guacamole. Agua fresca. Free chips first round.',dietary:['Vegetarian tacos available','Vegan options','Gluten-free tortilla on request']},
+  aroy:{name:'Aroy Thai',sub:'Thai · $ · 4511 College Ave',bg:'bg-thai',pills:[{t:'Open til 8:30pm',c:'dpill-open'},{t:'~10 min',c:'dpill-wait'},{t:'$10–$14',c:'dpill-price'}],trust:{p:'"A tiny spot on College Ave that gets overlooked — do not sleep on it. Drunken noodles at spice 3 is a rite of passage."',s:'— Aisha K. · 4 check-ins'},menu:'Drunken noodles, Pad Thai, Pad See Ew, green/red curry, pineapple fried rice, larb gai.',dietary:['Vegetarian-friendly','Vegan on request']},
+  marathon:{name:'Marathon Deli',sub:'Greek · $ · 7412 Baltimore Ave',bg:'bg-greek',pills:[{t:'Open late',c:'dpill-open'},{t:'~5 min',c:'dpill-wait'},{t:'$4–$12',c:'dpill-price'}],trust:{p:'"Marathon Fries are the late-night institution of College Park. The gyro is legitimately good and under $12."',s:'— Simone P. · 9 check-ins'},menu:'Gyros, Marathon Fries, cheesesteaks, falafel, chicken wraps.',dietary:['Vegetarian falafel','Halal-friendly']},
+  playa:{name:'Playa Bowls',sub:'Açaí · $$ · Near Landmark',bg:'bg-acai',pills:[{t:'Open til 9pm',c:'dpill-open'},{t:'~7 min',c:'dpill-wait'},{t:'$10–$17',c:'dpill-price'}],trust:{p:'"Stupid Cupid bowl is my go-to when I need something healthy and also hits."',s:'— Kevin L. · 5 check-ins'},menu:'Açaí bowls, pitaya bowls, smoothies. Stupid Cupid, Pineapple Mango, Tropical Storm.',dietary:['Vegan','Gluten-free','Dairy-free options']},
+  spice6:{name:'Spice 6',sub:'Indian · $ · Route 1',bg:'bg-india',pills:[{t:'Open til 9pm',c:'dpill-open'},{t:'~8 min',c:'dpill-wait'},{t:'$10–$16',c:'dpill-price'}],trust:{p:'"Indian food served Chipotle-style. The naan pizza with tikka masala is insane value for $14."',s:'— Priya M. · 7 check-ins'},menu:'Naan pizza, tikka masala bowls, saag, dal, basmati rice, samosas.',dietary:['Vegetarian','Vegan options','Halal']},
+  shagga:{name:'Shagga Ethiopian',sub:'Ethiopian · $$ · 6040 Baltimore Ave, Hyattsville',bg:'bg-eth',pills:[{t:'Open til 10pm',c:'dpill-open'},{t:'Sit-down',c:'dpill-wait'},{t:'$13–$20',c:'dpill-price'}],trust:{p:'"Worth every penny. Combo platter is massive. Lamb wot and lentils are both incredible. 3 people ~$50 total, stuffed."',s:'— Marcus R. · 4 check-ins'},menu:'Combo platters (meat or veggie), lamb wot, doro tibs, misir wot lentils, sambusas, Ethiopian coffee.',dietary:['Vegetarian platter','Vegan-friendly','Gluten-free injera (teff)']},
+  qu:{name:'Qu Japan',sub:'Japanese · $$ · Route 1 near campus',bg:'bg-ramen',pills:[{t:'Open til 10pm',c:'dpill-open'},{t:'~15 min',c:'dpill-wait'},{t:'$13–$20',c:'dpill-price'}],trust:{p:'"Chicken teriyaki ramen is the move. Pay cash and get 5% off. Also does hibachi bowls. Consistently solid."',s:'— Simone P. · 5 check-ins'},menu:'Ramen (tonkotsu, chicken teriyaki, shoyu), hibachi bowls, gyoza, bubble tea.',dietary:['Gluten-free options','Vegan ramen available']},
+  busboys:{name:'Busboys & Poets',sub:'American · $$ · 5331 Baltimore Ave, Hyattsville',bg:'bg-cafe',pills:[{t:'Open late',c:'dpill-open'},{t:'Sit-down',c:'dpill-wait'},{t:'$15–$30',c:'dpill-price'}],trust:{p:'"Vegan nachos are legitimately amazing. Free coffee refills. Good for studying all afternoon on a weekend."',s:'— Kevin L. · 3 check-ins'},menu:'Vegan nachos, avocado toast, burgers, cocktails, coffee with free refills. Full brunch menu.',dietary:['Strong vegan/veg menu','Gluten-free options']},
+  nandos:{name:"Nando's",sub:'Peri-peri chicken · $$ · Route 1',bg:'bg-cafe',pills:[{t:'Open til 10pm',c:'dpill-open'},{t:'~12 min',c:'dpill-wait'},{t:'$15–$22',c:'dpill-price'}],trust:{p:'"Chicken sandwich with sweet potato fries is the go-to. Nothing crazy but always solid."',s:'— Kevin B. · 3 check-ins'},menu:"Peri-peri chicken (whole, half, quarter), chicken sandwich, wraps, sweet potato fries, sides.",dietary:['Gluten-free chicken','Vegetarian halloumi available']}
+};
+const surprises=Object.keys(rests);let sIdx=0;
+
+function showPanel(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.querySelector('.main-scroll').scrollTop=0;
+  ['home','filter','group','friends','profile'].forEach(pg=>{
+    const sb=document.getElementById('sb-'+pg);
+    const mn=document.getElementById('mn-'+pg);
+    const isActive=pg===id;
+    if(sb){sb.classList.toggle('active',isActive);sb.querySelectorAll('path,circle,line,polyline').forEach(el=>el.setAttribute('stroke',isActive?'#FFD200':'#666'));}
+    if(mn){mn.classList.toggle('active',isActive);mn.querySelectorAll('path,circle,line,polyline').forEach(el=>el.setAttribute('stroke',isActive?'#FFD200':'#666'));}
+  });
+}
+function goHome(){showPanel('home');}
+function goFilter(){showPanel('filter');}
+function goGroup(){showPanel('group');}
+function goFriends(){showPanel('friends');}
+function goProfile(){showPanel('profile');}
+
+function showDetail(key){
+  const r=rests[key];if(!r)return;
+  document.getElementById('detail-name').textContent=r.name;
+  document.getElementById('detail-sub').textContent=r.sub;
+  document.getElementById('detail-hero-bg').className='detail-hero-bg '+r.bg;
+  document.getElementById('detail-pills').innerHTML=r.pills.map(p=>`<div class="dpill ${p.c}">${p.t}</div>`).join('');
+  document.getElementById('detail-trust').innerHTML=`<p>${r.trust.p}</p><p class="src">${r.trust.s}</p>`;
+  document.getElementById('detail-menu').textContent=r.menu;
+  document.getElementById('detail-dietary').innerHTML=r.dietary.map(d=>`<div class="dtag">✓ ${d}</div>`).join('');
+  const btn=document.getElementById('checkin-btn');
+  btn.textContent='Been Here — Check In';btn.style.background='var(--red)';
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-detail').classList.add('active');
+  document.querySelector('.main-scroll').scrollTop=0;
+}
+function showSurprise(){showDetail(surprises[sIdx++%surprises.length]);}
+function checkIn(){const b=document.getElementById('checkin-btn');b.textContent='✓ Checked In!';b.style.background='#1E6B40';}
+function saveRest(){}
+function toggleFilter(el){el.classList.toggle('sel');}
+function togglePrice(el){el.classList.toggle('sel');}
+function clearFilters(){document.querySelectorAll('.fopt,.price-opt').forEach(o=>o.classList.remove('sel'));}
+function castVote(which){
+  document.querySelectorAll('.vote-card').forEach(c=>c.classList.remove('picked'));
+  const c=document.getElementById('vote-'+which);if(c)c.classList.add('picked');
+  const ws=document.getElementById('win-section');
+  const results={hab:['🌮','Taqueria Habanero wins!','Decided in 43 seconds · 0.4 mi away'],qu:['🍜','Qu Japan wins!','Decided in 38 seconds · 0.3 mi away'],aroy:['🌶','Aroy Thai wins!','Decided in 51 seconds · 0.6 mi away']};
+  const r=results[which]||results.hab;
+  ws.innerHTML=`<div class="win-em">${r[0]}</div><div class="win-name">${r[1]}</div><div class="win-sub">${r[2]}</div>`;
+}
+</script>
+</body>
+</html>
