@@ -1,0 +1,70 @@
+/* TerpTaste components (direction A: Signage). All values from css/tokens.css. */
+
+/* ── Restaurant card ──────────────────────────────────────────────────── */
+.tt-card{position:relative;isolation:isolate;display:flex;flex-direction:column;background:var(--card-bg);border-radius:var(--r-card);overflow:hidden;min-width:0;}
+.tt-card-media{position:relative;}
+.tt-card-body{display:flex;flex-direction:column;gap:var(--s-2);padding:var(--s-3) var(--s-4) var(--s-4);flex:1;min-width:0;}
+.tt-card-name{margin:0;font-family:var(--f-display);font-weight:800;font-size:var(--card-name-size);line-height:var(--lh-display);letter-spacing:-.005em;color:var(--text-primary);}
+/* The name button covers the whole card, so the card is one click/tab target. */
+.tt-card-link{all:unset;cursor:pointer;}
+.tt-card-link::after{content:"";position:absolute;inset:0;z-index:1;}
+.tt-card-link:focus-visible{outline:none;}
+.tt-card:has(.tt-card-link:focus-visible){outline:2px solid var(--focus-ring);outline-offset:2px;}
+.tt-card:hover .tt-tile-word{color:var(--tile-word-hover);}
+
+.tt-card--compact{width:200px;flex-shrink:0;}
+.tt-card--compact .tt-tile{height:88px;}
+.tt-card--compact .tt-tile-word{font-size:76px;}
+.tt-card--compact .tt-card-name{font-size:var(--t-20);}
+.tt-card--compact .tt-card-body{padding:var(--s-2) var(--s-3) var(--s-3);gap:var(--s-1);}
+
+/* ── Photo tile with type-based fallback ─────────────────────────────── */
+.tt-tile{position:relative;height:var(--tile-h);background:var(--surface-tile);overflow:hidden;}
+.tt-tile-word{position:absolute;left:-.04em;bottom:-.22em;font-family:var(--f-display);font-weight:900;font-size:var(--tile-word-size);line-height:1;letter-spacing:-.02em;color:var(--tile-word-color);white-space:nowrap;user-select:none;transition:color var(--dur-fast) var(--ease-out);}
+.tt-tile-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+
+.tt-status{position:absolute;top:var(--s-2);left:var(--s-2);z-index:2;display:inline-flex;align-items:center;gap:6px;padding:3px 8px 3px 7px;border-radius:var(--r-pill);background:var(--scrim);font-family:var(--f-body);font-size:var(--t-12);font-weight:500;color:var(--text-primary);}
+.tt-status::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--status-open);}
+.tt-status.is-closed::before{background:var(--status-closed);}
+
+.tt-save{position:absolute;top:var(--s-2);right:var(--s-2);z-index:2;display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:var(--scrim);color:var(--text-primary);font-size:17px;line-height:1;cursor:pointer;}
+.tt-save[aria-pressed="true"]{color:var(--action);}
+.tt-save:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
+
+/* ── Card text rows ───────────────────────────────────────────────────── */
+.tt-trust{display:flex;align-items:center;gap:var(--s-2);font-family:var(--f-body);font-size:var(--t-14);color:var(--text-secondary);}
+.tt-trust.is-student{color:var(--text-muted);}
+.tt-avatar{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;flex-shrink:0;font-size:10px;font-weight:600;color:var(--on-action);}
+.tt-data{display:grid;grid-template-columns:auto auto 1fr;column-gap:var(--s-4);margin-top:auto;font-family:var(--f-data);font-size:var(--t-14);color:var(--text-secondary);}
+.tt-data-strong{color:var(--text-primary);}
+
+/* ── Buttons used by states ───────────────────────────────────────────── */
+.tt-btn{display:inline-flex;align-items:center;gap:var(--s-2);padding:10px var(--s-4);border:1px solid var(--border);border-radius:var(--r-control);background:var(--surface-1);color:var(--text-primary);font-family:var(--f-body);font-size:var(--t-14);font-weight:600;cursor:pointer;transition:background-color var(--dur-fast) var(--ease-out);}
+.tt-btn:hover{background:var(--surface-2);}
+.tt-btn--primary{background:var(--action);border-color:var(--action);color:var(--on-action);}
+.tt-btn--primary:hover{background:var(--action-press);border-color:var(--action-press);}
+.tt-btn:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
+
+/* ── Loading skeleton ─────────────────────────────────────────────────── */
+.tt-skel-group{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--card-gap);}
+.tt-skel .tt-card-body{gap:var(--s-2);}
+.tt-skel-block{border-radius:4px;background:var(--surface-2);animation:tt-pulse 1.4s ease-in-out infinite;}
+.tt-skel-tile{height:var(--tile-h);border-radius:0;}
+.tt-skel-name{height:24px;width:70%;}
+.tt-skel-line{height:14px;width:45%;}
+@keyframes tt-pulse{50%{opacity:.5;}}
+
+/* ── Empty and error states ───────────────────────────────────────────── */
+.tt-state{display:flex;flex-direction:column;align-items:flex-start;gap:var(--s-3);max-width:520px;padding:var(--s-5);border-radius:var(--r-sheet);background:var(--surface-1);}
+.tt-state-title{margin:0;font-family:var(--f-display);font-weight:800;font-size:var(--t-28);line-height:1;color:var(--text-primary);}
+.tt-state-body{margin:0;max-width:44ch;font-family:var(--f-body);font-size:var(--t-14);line-height:var(--lh-body);color:var(--text-secondary);}
+.tt-state--error{box-shadow:inset 3px 0 0 var(--danger);}
+
+/* Page gutters while the legacy screen layout is still in place (Phase 4 replaces it). */
+.tt-gutter{padding:var(--s-4) 28px;}
+@media (max-width:700px){ .tt-gutter{padding:var(--s-3) 16px;} }
+
+@media (prefers-reduced-motion:reduce){
+  .tt-skel-block{animation:none;}
+  .tt-tile-word,.tt-btn{transition:none;}
+}

@@ -59,6 +59,12 @@ Done:
 5. Refactor every page to use `getRestaurants()` instead of reading data directly.
 
 ## Phase 3: Components
+Built in four groups, with a stop for review after each:
+1. ✅ Restaurant card, photo fallback, loading/empty/error states (`js/ui/components.js`, `css/components.css`)
+2. Search bar and filter chips, with the Filter panel actually filtering
+3. Detail view, check-in, Saved Spots
+4. Group Vote scoreboard and nav, with Saved in the mobile nav
+
 Build or rebuild these as reusable pieces using tokens only:
 - Restaurant card (photo, name, cuisine, price, rating, distance, open/closed badge, save button)
 - Search bar and filter chips (cuisine, price, open now, distance, rating)

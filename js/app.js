@@ -25,21 +25,36 @@ const CARD_STYLES = {
   eddiescafe:   { emoji: '🍊', grad: 'linear-gradient(135deg,#3A1400,#BA4A00)' },
 };
 
-// Restaurant data comes only from TerpData (js/data/restaurants.js).
-const PRICE_SYMBOL = { PRICE_LEVEL_INEXPENSIVE:'$', PRICE_LEVEL_MODERATE:'$$', PRICE_LEVEL_EXPENSIVE:'$$$', PRICE_LEVEL_VERY_EXPENSIVE:'$$$$' };
-const price = r => PRICE_SYMBOL[r.priceLevel] || '';
+// Restaurant data comes only from TerpData (js/data/restaurants.js); markup from UI (js/ui/components.js).
+const price = UI.price;
 const cardStyle = id => CARD_STYLES[id] || {emoji:'🍽',grad:'linear-gradient(135deg,#1a1a1a,#333)'};
 
-// Minimal loading/error placeholders; Phase 3 replaces these with skeleton and error components.
-function withLoading(el, promise, render, retry){
-  const t = setTimeout(()=>{ el.innerHTML = `<div class="empty-state">Loading…</div>`; }, 150);
+// Loading skeleton (only if the fetch takes over 150ms, so fast loads don't flicker),
+// then render, or an error state with Try again.
+function withLoading(el, promise, render, retry, skeleton = UI.skeletonCards(3)){
+  const t = setTimeout(()=>{ el.innerHTML = `<div class="tt-gutter">${skeleton}</div>`; }, 150);
   return promise.then(v=>{ clearTimeout(t); render(v); }).catch(err=>{
     clearTimeout(t);
     console.error(err);
-    el.innerHTML = `<div class="empty-state">Restaurants didn’t load. Check your connection, then try again.<br><br><button class="abtn" type="button">Try again</button></div>`;
-    el.querySelector('button').onclick = retry;
+    UI.mount(el, `<div class="tt-gutter">${UI.errorState()}</div>`, { retry });
   });
 }
+
+// Cards anywhere in the app: open on click, save with the heart.
+document.addEventListener('click', e=>{
+  const save = e.target.closest('[data-save]');
+  if(save){
+    const id = save.dataset.save;
+    const on = TerpData.toggleSaved(id);
+    const name = save.closest('.tt-card')?.querySelector('.tt-card-link')?.textContent || '';
+    UI.setSaveButton(save, on, name);
+    showToast(on ? `Saved ${name}` : `Removed ${name} from saved`);
+    updateStats();
+    return;
+  }
+  const open = e.target.closest('[data-open]');
+  if(open) showDetail(open.dataset.open);
+});
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let currentKey = null;
@@ -87,73 +102,31 @@ function renderHome(filter) {
   const el = document.getElementById('home-content');
   return withLoading(el, TerpData.getRestaurants(CHIP_FILTERS[filter] || {}), list=>{
     if(req!==homeReq) return; // a newer chip click won
+    if(!list.length){
+      const noHours = filter==='open';
+      UI.mount(el, `<div class="tt-gutter">${UI.emptyState({
+        title: noHours ? 'No opening hours yet' : 'No spots match',
+        body: noHours ? 'TerpTaste doesn’t have opening hours for these spots yet, so it can’t tell which are open right now.'
+                      : 'Nothing nearby matches this filter yet.',
+        action: { label:'Show all spots', name:'all' },
+      })}</div>`, { all: ()=>filterChip(document.querySelector('#home-chips .chip'), 'all') });
+      return;
+    }
+    // Section layout stays until Phase 4 replaces it with walk-time sections.
     const forYou = list.slice(0,3);
     const budget = list.filter(r=>r.priceLevel==='PRICE_LEVEL_INEXPENSIVE').slice(0,6);
     const more = list.slice(3, list.length>6?9:list.length);
     const worth = list.filter(r=>r.distanceMiles>1).slice(0,4);
+    const grid = rs => `<div class="cgrid">${rs.map(r=>UI.card(r)).join('')}</div>`;
 
     let h = '';
-    h += `<div class="slabel">For You — based on your preferences</div><div class="cgrid">`;
-    forYou.forEach(r=>{ h+=rCard(r); });
-    h += `</div>`;
-    if(budget.length){ h+=`<div class="slabel">Budget picks · Under $15</div><div class="mrow">`; budget.forEach(r=>{h+=rMini(r);}); h+=`</div>`; }
-    if(more.length){ h+=`<div class="slabel">More nearby</div><div class="cgrid">`; more.forEach(r=>{h+=rCard(r);}); h+=`</div>`; }
-    if(worth.length){ h+=`<div class="slabel">Worth the trip</div><div class="cgrid">`; worth.forEach(r=>{h+=rCard(r);}); h+=`</div>`; }
+    h += `<div class="slabel">For You — based on your preferences</div>${grid(forYou)}`;
+    if(budget.length) h += `<div class="slabel">Budget picks · Under $15</div><div class="mrow">${budget.map(r=>UI.card(r,{compact:true})).join('')}</div>`;
+    if(more.length) h += `<div class="slabel">More nearby</div>${grid(more)}`;
+    if(worth.length) h += `<div class="slabel">Worth the trip</div>${grid(worth)}`;
     h += `<div style="height:20px;"></div>`;
     el.innerHTML = h;
   }, ()=>renderHome(filter));
-}
-
-const AVATAR_TOKENS = ['--avatar-red','--avatar-blue','--avatar-green','--avatar-purple','--avatar-orange','--avatar-teal'];
-function avatarColorFor(name){
-  let h = 0; for(let i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) % AVATAR_TOKENS.length;
-  return `var(${AVATAR_TOKENS[h]})`;
-}
-function rFriendRow(r){
-  const name = r.terp.review && r.terp.review.author;
-  if(!name) return '';
-  const initials = name.replace(/[^A-Za-z ]/g,'').trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  return `<div class="rfriends">
-      <div class="rf-avatars"><div class="rf-avatar" style="background:${avatarColorFor(name)}">${initials}</div></div>
-      <span class="rf-text">${name} checked in here</span>
-    </div>`;
-}
-function rCard(r){
-  const cs = cardStyle(r.id);
-  const isSaved = r.terp.saved;
-  return `<div class="rcard" onclick="showDetail('${r.id}')">
-    <div class="rimg">
-      <div class="rimg-bg" style="background:${cs.grad}"></div>
-      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.6))">${cs.emoji}</div>
-      ${typeof r.isOpenNow==='boolean' ? `<div class="rstatus ${r.isOpenNow?'is-open':'is-closed'}"><span class="rstatus-dot"></span>${r.isOpenNow?'Open':'Closed'}</div>` : ''}
-      <button class="rsave${isSaved?' is-saved':''}" onclick="event.stopPropagation();quickSave('${r.id}',this)">${isSaved?'♥':'♡'}</button>
-    </div>
-    <div class="rbody">
-      <div class="rname">${r.name}</div>
-      <div class="rmeta">${price(r)} · ${r.primaryTypeDisplayName} · ${r.distanceMiles} mi</div>
-      ${rFriendRow(r)}
-    </div>
-  </div>`;
-}
-function quickSave(key, btn){
-  const isSaved = TerpData.toggleSaved(key);
-  showToast(isSaved ? 'Saved! ♥' : 'Removed from saved');
-  btn.textContent = isSaved ? '♥' : '♡';
-  btn.classList.toggle('is-saved', isSaved);
-  updateStats();
-}
-
-function rMini(r){
-  const cs = cardStyle(r.id);
-  return `<div class="mcard" onclick="showDetail('${r.id}')">
-    <div class="mimg">
-      <div class="mimg-bg" style="background:${cs.grad}"></div>
-      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.6))">${cs.emoji}</div>
-      <div class="mimg-ov"></div>
-      <div class="mbadge">${price(r)} · ${r.distanceMiles} mi</div>
-    </div>
-    <div class="mbody"><div class="mname">${r.name}</div><div class="msub">${r.primaryTypeDisplayName} · ${r.terp.waitMinutes ?? 0} min</div></div>
-  </div>`;
 }
 
 let activeChip = 'all';
@@ -234,13 +207,20 @@ function checkIn() {
 function renderSaved() {
   const el = document.getElementById('saved-content');
   const ids = TerpData.savedIds();
-  if(!ids.length){ el.innerHTML=`<div class="empty-state">No saved spots yet.<br>Tap ♡ on any restaurant to save it here.<br><br><small style="color:var(--text-muted);">Tip: you can also save from the Friends Feed.</small></div>`; return; }
+  if(!ids.length){
+    UI.mount(el, `<div class="tt-gutter">${UI.emptyState({
+      title: 'No saved spots yet',
+      body: 'Tap ♡ on any spot, or Save spot in the Friends feed, to keep it here.',
+      action: { label:'Browse spots', name:'browse' },
+    })}</div>`, { browse: ()=>go('home') });
+    return;
+  }
   return withLoading(el, TerpData.getRestaurants({ids}), list=>{
     let h = `<div class="saved-grid">`;
     list.forEach(r=>{h+=`<div class="saved-item" onclick="showDetail('${r.id}')"><div><div class="saved-name">${r.name}</div><div class="saved-meta">${r.primaryTypeDisplayName} · ${price(r)} · ${r.distanceMiles} mi</div></div><div class="saved-remove" onclick="event.stopPropagation();unsave('${r.id}')">×</div></div>`;});
     h+=`</div>`;
     el.innerHTML = h;
-  }, renderSaved);
+  }, renderSaved, UI.skeletonCards(2));
 }
 function unsave(key){ TerpData.setSaved(key, false); renderSaved(); updateStats(); showToast('Removed from saved'); }
 
@@ -280,7 +260,7 @@ function renderVoteCards() {
       document.getElementById('win-name').textContent = `${top.name} wins!`;
       document.getElementById('win-sub').textContent = `${top.distanceMiles} mi · ${top.primaryTypeDisplayName} · ${price(top)}`;
     }
-  }, renderVoteCards);
+  }, renderVoteCards, UI.skeletonCards(1));
 }
 function castVote(key) {
   TerpData.castVote(key); renderVoteCards();
@@ -295,7 +275,7 @@ function renderProfile() {
   return withLoading(h, TerpData.getRestaurants({ids: history.map(c=>c.id)}), list=>{
     const byId = new Map(list.map(r=>[r.id,r]));
     h.innerHTML = history.map(c=>{ const r=byId.get(c.id); if(!r) return ''; return `<div class="hist"><div><div class="hname">${r.name}</div><div class="hsub">${r.primaryTypeDisplayName} · ${price(r)}</div></div><div class="hdate">${formatDay(c.date)}</div></div>`; }).join('');
-  }, renderProfile);
+  }, renderProfile, UI.skeletonCards(1));
 }
 function formatDay(iso){
   const d = new Date(iso+'T12:00:00');
