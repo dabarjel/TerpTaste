@@ -14,13 +14,26 @@ Use the frontend-design skill for all visual and layout decisions.
 - Don't touch the backend, API keys, or any Google setup. That's a later phase.
 - Keep all existing features working: Saved Spots, check-ins, and group voting.
 
+## Chosen direction: A, Signage (decided 2026-09-29)
+Reference: `styleguide.html` and `css/tokens.css`.
+- **Palette:** Asphalt `#1A1B1D` page, Curb `#25262A` surfaces, Lane line `#3A3B40` borders, Chalk `#EFEDE8` text. Terp Red `#E21833` is for actions and the current selection only. Gold `#FFD200` is for ratings and the vote leader only.
+- **Type:** Big Shoulders Display for names, titles and vote counts. Inter for body, buttons and labels, in sentence case. IBM Plex Mono only for numbers people compare (price, distance, walk time, vote totals), never for labels.
+- **Surfaces:** flat, no borders on cards, small radii (6px cards, 8px controls, 10px sheets), no drop shadows except floating layers.
+- **Signature ideas (keep on every screen they apply to):**
+  1. **Walk-time layout.** Discover is grouped by walk time from campus ("Under 10 min walk", "10 to 20 min walk", "Worth the drive") instead of "For You / More nearby". Each spot appears once.
+  2. **Scoreboard vote.** Big Shoulders counts, gold bar and count on the leader, "Your vote" tag, status reads "Leading" until everyone has voted, then "Final". The count flip is the app's only signature motion.
+  3. **Type-based photo fallback.** Cuisine name in cropped Big Shoulders bleeding off the tile. Replaces the emoji-on-gradient tiles.
+- **Avoid:** all-caps tracked section labels, "A · B · C" meta strings (use aligned data columns), "→" on button text, hover-lift on every card.
+
 ## Phase 0: Audit
 1. Read the whole repo and list every page, component, and script.
 2. Find where restaurant data lives and how each page reads it.
 3. List current UI problems (inconsistent spacing, hardcoded colors, broken mobile layouts, missing states, etc).
 4. Give me a short summary and wait for my go-ahead.
 
-## Phase 1: Design system
+## Phase 1: Design system ✅ (commit a8baa51)
+Done: `css/tokens.css` and `styleguide.html`. Step 2 (migrating `css/app.css` to the new tokens) moved to Phases 3–4, because every screen gets rebuilt there and swapping tokens into the old CSS would be thrown away.
+
 1. Create `css/tokens.css` as the single source of truth:
    - Colors: dark backgrounds, UMD Terp Red accent, gold for ratings, plus neutrals, success/error, and border colors
    - Type: Big Shoulders Display (headings), Inter (body), IBM Plex Mono (data like prices, distances, vote counts)
@@ -47,15 +60,25 @@ Build or rebuild these as reusable pieces using tokens only:
 - Group voting (create a vote, add options, vote, see results)
 - Nav bar (mobile bottom nav, desktop top nav)
 - **Every data view needs three states:** loading skeleton, empty state, and error state. These matter a lot once real API calls are involved.
-- Photo fallback for restaurants with no image
+- Photo fallback for restaurants with no image (type-based tile from the styleguide)
+- Replace old `css/app.css` values with `css/tokens.css` as each component is rebuilt; delete unused legacy rules.
+
+Priority fixes from the UX heuristics review (2026-09-29), component level:
+- **Filters that work.** One shared filter state used by both the Home chips and the Filter screen. "Show results" applies it, Home shows which filters are active, and a filter with no matches shows the empty state with "Clear filters".
+- **No dead controls.** Every control is a real `<button>` with a label. Finish or remove "🔥 Same", "Invite friends by link" and "Add another option". Feed "Save spot" toggles and shows saved state.
+- **Honest trust labels.** "*Name* checked in" and "From your people" only for actual friends; anonymous handles show as "Student review".
+- **Scoreboard wording.** "Leading" plus "*n* of *m* have voted" until everyone votes, then "Final". Mark your pick with a "Your vote" tag.
+- **Nav.** Saved gets a place in the mobile bottom nav.
+- **Search bar** on Discover (name and dish), feeding the same filter state.
 
 ## Phase 4: Screens
 Rebuild each page with the new components:
-1. Home / Discover
+1. Home / Discover: walk-time sections replace "For You / Budget / More nearby / Worth the trip"; each spot appears once. Drop "For You — based on your preferences" unless it actually uses the profile preferences.
 2. Search results
-3. Restaurant detail
-4. Saved Spots
-5. Group vote flow
+3. Restaurant detail: "Back" returns to wherever the user came from (Saved, Friends, Group, Surprise me), not always Home. Check-in state persists when the page is reopened.
+4. Saved Spots: removing a spot shows an Undo action in the toast.
+5. Group vote flow: scoreboard board; the picker offers every restaurant (not just the first 12); options can be removed.
+Also: "Surprise me" picks at random instead of stepping through the list in order.
 Leave a placeholder spot on Discover and Detail for a map later. Don't build the map yet.
 
 ## Phase 5: Polish
