@@ -59,7 +59,7 @@ let voteCount = {habanero:3,qu:1,aroy:0};
 let myVote = 'habanero';
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
-const pages = ['home','filter','group','friends','saved','casestudy','profile'];
+const pages = ['home','filter','group','friends','saved','profile'];
 function go(id) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
@@ -302,34 +302,6 @@ function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   clearTimeout(tTimer);tTimer=setTimeout(()=>t.classList.remove('show'),2200);
 }
-
-// ── CASE STUDY NAV ────────────────────────────────────────────────────────────
-function csScroll(sectionId) {
-  const el = document.getElementById('cs-'+sectionId);
-  if(!el) return;
-  const scroll = document.getElementById('main-scroll');
-  // account for sticky nav height (~44px) + cs-nav (~44px)
-  const offset = el.getBoundingClientRect().top + scroll.scrollTop - 88;
-  scroll.scrollTo({ top: offset, behavior: 'smooth' });
-  document.querySelectorAll('.cs-nav-item').forEach(n=>n.classList.remove('active'));
-  const map = {intro:0,research:1,ideation:2,prototype:3,testing:4,reflection:5};
-  const idx = map[sectionId];
-  if(idx !== undefined) document.querySelectorAll('.cs-nav-item')[idx]?.classList.add('active');
-}
-
-// Update case study nav active state on scroll
-document.getElementById('main-scroll').addEventListener('scroll', function() {
-  if(!document.getElementById('panel-casestudy').classList.contains('active')) return;
-  const sections = ['intro','research','ideation','prototype','testing','reflection'];
-  const navItems = document.querySelectorAll('.cs-nav-item');
-  const scrollTop = this.scrollTop + 100;
-  let active = 0;
-  sections.forEach((id, i) => {
-    const el = document.getElementById('cs-'+id);
-    if(el && el.offsetTop <= scrollTop) active = i;
-  });
-  navItems.forEach((n,i) => n.classList.toggle('active', i===active));
-});
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 renderHome('all');
