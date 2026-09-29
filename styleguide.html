@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TerpTaste Styleguide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<style>
+/* All values come from css/tokens.css. Styleguide-only layout lives here. */
+
+/* ── Base ──────────────────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--bg-page);}
+body{background:var(--bg-page);color:var(--text-primary);font-family:var(--f-body);font-size:var(--t-16);line-height:var(--lh-body);-webkit-font-smoothing:antialiased;}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;}
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
+.wrap{max-width:1120px;margin:0 auto;padding:0 var(--s-4);}
+@media (min-width:768px){.wrap{padding:0 var(--s-6);}}
+
+/* ── Styleguide chrome ─────────────────────────────────────────────── */
+.sg-top{position:sticky;top:0;z-index:20;background:var(--bg-page);border-bottom:1px solid var(--border);}
+.sg-top .wrap{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:var(--s-3);padding-top:var(--s-3);padding-bottom:var(--s-3);}
+.sg-logo{font-family:var(--f-display);font-weight:900;font-size:var(--t-28);line-height:1;letter-spacing:var(--tracking-display);}
+.sg-dir{font-size:var(--t-14);color:var(--text-secondary);}
+.sg-note{padding:var(--s-5) 0 0;color:var(--text-secondary);font-size:var(--t-14);max-width:64ch;}
+.sg-note code{font-family:var(--f-data);color:var(--text-primary);}
+.sg-section{padding:var(--section-gap) 0 0;}
+.sg-h{font-family:var(--f-display);font-weight:800;font-size:var(--t-20);color:var(--text-muted);margin-bottom:var(--s-4);letter-spacing:.01em;}
+
+/* palette */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--s-3);}
+.sw{border-radius:var(--r-card);overflow:hidden;background:var(--surface-1);border:1px solid var(--border);}
+.sw-chip{height:64px;}
+.sw-meta{padding:var(--s-2) var(--s-3);font-size:var(--t-12);color:var(--text-secondary);}
+.sw-meta b{display:block;color:var(--text-primary);font-weight:600;font-size:var(--t-14);}
+.sw-meta code{font-family:var(--f-data);}
+
+/* type scale */
+.tscale{display:grid;gap:var(--s-3);}
+.trow{display:grid;grid-template-columns:72px 1fr;align-items:baseline;gap:var(--s-4);border-bottom:1px solid var(--border);padding-bottom:var(--s-3);}
+.trow .px{font-family:var(--f-data);font-size:var(--t-12);color:var(--text-muted);}
+.d{font-family:var(--f-display);font-weight:900;line-height:var(--lh-display);letter-spacing:var(--tracking-display);}
+
+/* ── Discover: search, chips, walk-time dividers, cards ───────────── */
+.phone{background:var(--bg-page);border:1px solid var(--border);border-radius:var(--r-sheet);padding:var(--s-5) var(--s-4) var(--s-6);}
+@media (min-width:768px){.phone{padding:var(--s-6);}}
+.disc-head{display:flex;justify-content:space-between;align-items:flex-end;gap:var(--s-3);flex-wrap:wrap;}
+.disc-title{font-family:var(--f-display);font-weight:900;font-size:var(--t-44);line-height:.9;}
+.btn{display:inline-flex;align-items:center;gap:var(--s-2);padding:10px var(--s-4);border-radius:var(--r-control);font-size:var(--t-14);font-weight:600;transition:background-color var(--dur-fast) var(--ease-out);}
+.btn-primary{background:var(--action);color:var(--on-action);}
+.btn-primary:hover{background:var(--action-press);}
+.btn-quiet{background:var(--surface-1);color:var(--text-primary);border:1px solid var(--border);}
+.btn-quiet:hover{background:var(--surface-2);}
+.search{margin-top:var(--s-4);display:flex;align-items:center;gap:var(--s-2);background:var(--surface-1);border:1px solid var(--border);border-radius:var(--r-control);padding:0 var(--s-3);}
+.search input{flex:1;min-width:0;background:none;border:0;color:var(--text-primary);font:inherit;font-size:var(--t-16);padding:var(--s-3) 0;}
+.search input::placeholder{color:var(--text-muted);}
+.search input:focus{outline:none;}
+.search:focus-within{border-color:var(--text-secondary);}
+.chips{display:flex;gap:var(--s-2);overflow-x:auto;padding:var(--s-3) 0 var(--s-1);scrollbar-width:none;}
+.chip{flex-shrink:0;padding:6px var(--s-3);border-radius:var(--r-pill);border:1px solid var(--border);font-size:var(--t-14);color:var(--text-secondary);transition:background-color var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out);}
+.chip:hover{color:var(--text-primary);border-color:var(--text-muted);}
+.chip[aria-pressed="true"]{background:var(--action);border-color:var(--action);color:var(--on-action);}
+
+.walk{display:flex;align-items:center;gap:var(--s-3);margin:var(--s-6) 0 var(--s-3);}
+.walk-label{font-family:var(--f-display);font-weight:800;font-size:var(--t-20);line-height:1;white-space:nowrap;}
+.walk-rule{flex:1;height:1px;background:var(--border);}
+.walk-count{font-family:var(--f-data);font-size:var(--t-12);color:var(--text-muted);white-space:nowrap;}
+
+.cards{display:grid;gap:var(--card-gap);grid-template-columns:repeat(auto-fill,minmax(240px,1fr));}
+.card{position:relative;isolation:isolate;background:var(--card-bg);border-radius:var(--r-card);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;}
+.card:hover .tile-word{color:var(--tile-word-hover);}
+
+/* type-based photo fallback */
+.tile{position:relative;height:var(--tile-h);background:var(--surface-tile);overflow:hidden;flex-shrink:0;}
+.tile-word{position:absolute;left:-.04em;bottom:-.22em;font-family:var(--f-display);font-weight:900;font-size:var(--tile-word-size);line-height:1;letter-spacing:-.02em;color:var(--tile-word-color);white-space:nowrap;transition:color var(--dur-fast) var(--ease-out);user-select:none;}
+.status{position:absolute;top:var(--s-2);left:var(--s-2);display:inline-flex;align-items:center;gap:6px;font-size:var(--t-12);font-weight:500;color:var(--text-primary);background:var(--scrim);padding:3px 8px 3px 7px;border-radius:var(--r-pill);}
+.status::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--status-open);}
+.status.closed::before{background:var(--status-closed);}
+.save{position:absolute;top:var(--s-2);right:var(--s-2);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--scrim);font-size:16px;line-height:1;color:var(--text-primary);z-index:1;}
+.save[aria-pressed="true"]{color:var(--action);}
+
+.body{padding:var(--s-3) var(--s-4) var(--s-4);display:flex;flex-direction:column;gap:var(--s-2);flex:1;min-width:0;}
+.name{font-family:var(--f-display);font-weight:800;font-size:var(--card-name-size);line-height:var(--lh-display);letter-spacing:-.005em;}
+.data{display:grid;grid-template-columns:auto auto 1fr;column-gap:var(--s-4);font-family:var(--f-data);font-size:var(--t-14);color:var(--text-secondary);}
+.data .walkmin{color:var(--text-primary);}
+.trust{font-size:var(--t-14);color:var(--text-secondary);display:flex;align-items:center;gap:var(--s-2);padding-top:var(--s-2);}
+.trust .av{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:600;color:var(--on-action);flex-shrink:0;}
+.trust .src{color:var(--text-muted);}
+
+/* ── Group vote scoreboard ─────────────────────────────────────────── */
+.board{background:var(--surface-1);border-radius:var(--r-sheet);overflow:hidden;}
+.board-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-3);flex-wrap:wrap;padding:var(--s-4) var(--s-5);border-bottom:1px solid var(--border);}
+.board-title{font-family:var(--f-display);font-weight:900;font-size:var(--t-28);line-height:1;}
+.board-status{font-size:var(--t-14);color:var(--text-secondary);}
+.board-status b{color:var(--highlight);font-weight:600;}
+.vrow{display:grid;grid-template-columns:4px 1fr auto;align-items:center;gap:var(--s-4);width:100%;text-align:left;padding:var(--s-3) var(--s-5) var(--s-3) 0;border-bottom:1px solid var(--border);transition:background-color var(--dur-fast) var(--ease-out);}
+.vrow:last-child{border-bottom:0;}
+.vrow:hover{background:color-mix(in srgb,var(--text-primary) 4%,transparent);}
+.vbar{align-self:stretch;background:transparent;}
+.vrow.leader .vbar{background:var(--highlight);}
+.vname{font-family:var(--f-display);font-weight:800;font-size:var(--t-28);line-height:1;display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap;}
+.vmeta{font-family:var(--f-data);font-size:var(--t-12);color:var(--text-muted);margin-top:var(--s-1);}
+.mine{font-family:var(--f-body);font-size:var(--t-12);font-weight:600;color:var(--on-action);background:var(--action);padding:2px 8px;border-radius:var(--r-pill);}
+.vcount{font-family:var(--f-display);font-weight:900;font-size:var(--vote-count-size);line-height:.85;min-width:1.2ch;text-align:right;font-variant-numeric:tabular-nums;overflow:hidden;height:.85em;}
+.vrow.leader .vcount{color:var(--highlight);}
+.vcount span{display:block;}
+.vcount span.flip{animation:flip var(--dur-flip) var(--ease-out);}
+@keyframes flip{from{transform:translateY(-70%);opacity:0;}to{transform:none;opacity:1;}}
+.board-foot{padding:var(--s-3) var(--s-5);font-size:var(--t-14);color:var(--text-muted);border-top:1px solid var(--border);}
+
+/* ── States ────────────────────────────────────────────────────────── */
+.states{display:grid;gap:var(--s-4);grid-template-columns:repeat(auto-fill,minmax(280px,1fr));}
+.state{background:var(--surface-1);border-radius:var(--r-sheet);padding:var(--s-5);display:flex;flex-direction:column;gap:var(--s-3);align-items:flex-start;}
+.state-h{font-family:var(--f-display);font-weight:800;font-size:var(--t-28);line-height:1;}
+.state p{font-size:var(--t-14);color:var(--text-secondary);max-width:40ch;}
+.state.error{box-shadow:inset 3px 0 0 var(--danger);}
+.skel{display:grid;gap:var(--s-2);width:100%;}
+.skel i{display:block;height:14px;border-radius:4px;background:var(--surface-2);animation:pulse 1.4s ease-in-out infinite;}
+.skel i:first-child{height:72px;}
+.skel i:nth-child(2){width:70%;height:22px;}
+.skel i:nth-child(3){width:45%;}
+@keyframes pulse{50%{opacity:.5;}}
+
+.foot{padding:var(--s-8) 0 var(--s-7);color:var(--text-muted);font-size:var(--t-12);}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;}
+}
+</style>
+</head>
+<body>
+
+<header class="sg-top">
+  <div class="wrap">
+    <div class="sg-logo">TerpTaste styleguide</div>
+    <div class="sg-dir">Direction A: Signage</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="sg-note">Flat surfaces with no borders and small corners. The cuisine name bleeds off the bottom of each tile like a painted sign. Every value on this page comes from <code>css/tokens.css</code>.</p>
+
+  <section class="sg-section" aria-labelledby="h-disc">
+    <h2 class="sg-h" id="h-disc">Discover</h2>
+    <div class="phone">
+      <div class="disc-head">
+        <h3 class="disc-title">Discover</h3>
+        <button class="btn btn-quiet" type="button">Surprise me</button>
+      </div>
+      <label class="search">
+        <span aria-hidden="true" style="color:var(--text-muted)">⌕</span>
+        <input type="search" placeholder="Search spots or dishes" aria-label="Search spots or dishes">
+      </label>
+      <div class="chips" role="group" aria-label="Quick filters">
+        <button class="chip" type="button" aria-pressed="true">Open now</button>
+        <button class="chip" type="button" aria-pressed="false">Under $15</button>
+        <button class="chip" type="button" aria-pressed="false">Vegan</button>
+        <button class="chip" type="button" aria-pressed="false">Halal</button>
+        <button class="chip" type="button" aria-pressed="false">Sit-down</button>
+        <button class="chip" type="button" aria-pressed="false">Open late</button>
+      </div>
+      <div id="discover"></div>
+    </div>
+  </section>
+
+  <section class="sg-section" aria-labelledby="h-vote">
+    <h2 class="sg-h" id="h-vote">Group vote</h2>
+    <div class="board">
+      <div class="board-head">
+        <h3 class="board-title">Friday dinner</h3>
+        <div class="board-status" id="board-status"></div>
+      </div>
+      <div id="board"></div>
+      <div class="board-foot">Tap a spot to move your vote.</div>
+    </div>
+  </section>
+
+  <section class="sg-section" aria-labelledby="h-states">
+    <h2 class="sg-h" id="h-states">States</h2>
+    <div class="states">
+      <div class="state" aria-label="Loading">
+        <div class="skel"><i></i><i></i><i></i></div>
+      </div>
+      <div class="state">
+        <div class="state-h">No spots match</div>
+        <p>Nothing is open now under $15 within a 10-minute walk. Clear a filter to see more.</p>
+        <button class="btn btn-quiet" type="button">Clear filters</button>
+      </div>
+      <div class="state error" role="alert">
+        <div class="state-h">Restaurants didn’t load</div>
+        <p>Check your connection, then try again. Your saved spots are still here.</p>
+        <button class="btn btn-primary" type="button">Try again</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-section" aria-labelledby="h-type">
+    <h2 class="sg-h" id="h-type">Type</h2>
+    <div class="tscale">
+      <div class="trow"><span class="px">72 display</span><span class="d" style="font-size:var(--t-72)">4 votes</span></div>
+      <div class="trow"><span class="px">44 display</span><span class="d" style="font-size:var(--t-44)">Taqueria Habanero</span></div>
+      <div class="trow"><span class="px">28 display</span><span class="d" style="font-size:var(--t-28);font-weight:800">Under 10 min walk</span></div>
+      <div class="trow"><span class="px">16 body</span><span>Al pastor and a hibiscus agua fresca. Free chips with your first order.</span></div>
+      <div class="trow"><span class="px">14 data</span><span style="font-family:var(--f-data);font-size:var(--t-14)">$$   0.4 mi   8 min</span></div>
+      <div class="trow"><span class="px">12 body</span><span style="font-size:var(--t-12);color:var(--text-secondary)">Jordan checked in 2 hours ago</span></div>
+    </div>
+  </section>
+
+  <section class="sg-section" aria-labelledby="h-color">
+    <h2 class="sg-h" id="h-color">Color</h2>
+    <div class="swatches">
+      <div class="sw"><div class="sw-chip" style="background:var(--asphalt)"></div><div class="sw-meta"><b>Asphalt</b><code>#1A1B1D</code> page</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--curb)"></div><div class="sw-meta"><b>Curb</b><code>#25262A</code> surfaces</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--lane)"></div><div class="sw-meta"><b>Lane line</b><code>#3A3B40</code> borders</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--chalk)"></div><div class="sw-meta"><b>Chalk</b><code>#EFEDE8</code> text</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--red)"></div><div class="sw-meta"><b>Terp Red</b><code>#E21833</code> action, selection</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--gold)"></div><div class="sw-meta"><b>Gold</b><code>#FFD200</code> rating, leader</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--open)"></div><div class="sw-meta"><b>Open</b><code>#3FC47F</code> open-now status</div></div>
+    </div>
+  </section>
+
+  <p class="foot">Sample data from College Park. Walk time assumes 3 mph.</p>
+</main>
+
+<script>
+// Sample data (subset of js/app.js). friend: true only for people in the Friends feed.
+const SPOTS = [
+  {name:'Qu Japan',          cuisine:'Japanese',  price:'$$', dist:0.3, open:true, by:'Simone P.', friend:true},
+  {name:'Taqueria Habanero', cuisine:'Mexican',   price:'$$', dist:0.4, open:true, by:'Jordan T.', friend:true},
+  {name:'Marathon Deli',     cuisine:'Greek',     price:'$',  dist:0.4, open:true, by:'Simone P.', friend:true},
+  {name:'Aroy Thai',         cuisine:'Thai',      price:'$',  dist:0.6, open:true, by:'Aisha K.',  friend:true},
+  {name:'Northwest Chinese', cuisine:'Chinese',   price:'$',  dist:1.0, open:false,by:'Striking-Safe-3103', friend:false},
+  {name:'Busboys & Poets',   cuisine:'American',  price:'$$', dist:1.5, open:true, by:'Kevin L.',  friend:false},
+  {name:'Shagga Ethiopian',  cuisine:'Ethiopian', price:'$$', dist:1.8, open:true, by:'Marcus R.', friend:true},
+];
+const AV = {'Simone P.':'--avatar-purple','Jordan T.':'--avatar-red','Aisha K.':'--avatar-blue','Marcus R.':'--avatar-green'};
+const walkMin = d => Math.round(d*20);
+const BUCKETS = [
+  {label:'Under 10 min walk', test:s=>walkMin(s.dist)<10},
+  {label:'10 to 20 min walk', test:s=>walkMin(s.dist)>=10 && walkMin(s.dist)<=20},
+  {label:'Worth the drive',   test:s=>walkMin(s.dist)>20},
+];
+
+function trust(s){
+  if(s.friend){
+    const first = s.by.split(' ')[0];
+    const ini = s.by.split(' ').map(w=>w[0]).join('');
+    return `<div class="trust"><span class="av" style="background:var(${AV[s.by]})">${ini}</span>${first} checked in</div>`;
+  }
+  return `<div class="trust"><span class="src">Student review</span></div>`;
+}
+function card(s){
+  const far = walkMin(s.dist)>20;
+  return `<article class="card" tabindex="0" aria-label="${s.name}">
+    <div class="tile">
+      <span class="tile-word" aria-hidden="true">${s.cuisine}</span>
+      <span class="status${s.open?'':' closed'}">${s.open?'Open':'Closed'}</span>
+      <button class="save" type="button" aria-pressed="false" aria-label="Save ${s.name}">♡</button>
+    </div>
+    <div class="body">
+      <div class="name">${s.name}</div>
+      ${trust(s)}
+      <div class="data"><span>${s.price}</span><span>${s.dist.toFixed(1)} mi</span><span class="walkmin">${far?'drive':walkMin(s.dist)+' min'}</span></div>
+    </div>
+  </article>`;
+}
+function renderDiscover(){
+  document.getElementById('discover').innerHTML = BUCKETS.map(b=>{
+    const list = SPOTS.filter(b.test);
+    if(!list.length) return '';
+    return `<div class="walk"><span class="walk-label">${b.label}</span><span class="walk-rule"></span><span class="walk-count">${list.length} ${list.length>1?'spots':'spot'}</span></div>
+      <div class="cards">${list.map(card).join('')}</div>`;
+  }).join('');
+}
+
+// Scoreboard
+const MEMBERS = 5;
+const vote = {options:[
+  {name:'Taqueria Habanero', meta:'$$   0.4 mi   8 min', n:2},
+  {name:'Qu Japan',          meta:'$$   0.3 mi   6 min', n:1},
+  {name:'Aroy Thai',         meta:'$    0.6 mi   12 min', n:1},
+], mine:0};
+function renderBoard(changed){
+  const total = vote.options.reduce((a,o)=>a+o.n,0);
+  const max = Math.max(...vote.options.map(o=>o.n));
+  const leaders = vote.options.filter(o=>o.n===max);
+  const done = total>=MEMBERS;
+  document.getElementById('board-status').innerHTML = leaders.length>1
+    ? `Tied. ${total} of ${MEMBERS} have voted.`
+    : `<b>${done?'Final':'Leading'}:</b> ${leaders[0].name}. ${total} of ${MEMBERS} have voted.`;
+  document.getElementById('board').innerHTML = vote.options.map((o,i)=>{
+    const lead = o.n===max && leaders.length===1;
+    return `<button class="vrow${lead?' leader':''}" type="button" data-i="${i}" aria-pressed="${vote.mine===i}">
+      <span class="vbar"></span>
+      <span><span class="vname">${o.name}${vote.mine===i?'<span class="mine">Your vote</span>':''}</span><span class="vmeta">${o.meta}</span></span>
+      <span class="vcount" aria-label="${o.n} votes"><span class="${changed&&changed.includes(i)?'flip':''}">${o.n}</span></span>
+    </button>`;
+  }).join('');
+}
+document.getElementById('board').addEventListener('click',e=>{
+  const row = e.target.closest('.vrow'); if(!row) return;
+  const i = +row.dataset.i; if(i===vote.mine) return;
+  vote.options[vote.mine].n--; vote.options[i].n++;
+  const changed=[vote.mine,i]; vote.mine=i; renderBoard(changed);
+});
+
+// Toggles
+document.addEventListener('click',e=>{
+  const chip = e.target.closest('.chip');
+  if(chip){ chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed')!=='true'); return; }
+  const save = e.target.closest('.save');
+  if(save){ const on = save.getAttribute('aria-pressed')!=='true'; save.setAttribute('aria-pressed',on); save.textContent = on?'♥':'♡'; }
+});
+
+renderDiscover();
+renderBoard();
+</script>
+</body>
+</html>
