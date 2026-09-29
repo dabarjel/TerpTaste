@@ -125,7 +125,7 @@ function rCard(r){
     <div class="rimg">
       <div class="rimg-bg" style="background:${cs.grad}"></div>
       <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.6))">${cs.emoji}</div>
-      <div class="rstatus ${r.isOpenNow?'is-open':'is-closed'}"><span class="rstatus-dot"></span>${r.isOpenNow?'Open':'Closed'}</div>
+      ${typeof r.isOpenNow==='boolean' ? `<div class="rstatus ${r.isOpenNow?'is-open':'is-closed'}"><span class="rstatus-dot"></span>${r.isOpenNow?'Open':'Closed'}</div>` : ''}
       <button class="rsave${isSaved?' is-saved':''}" onclick="event.stopPropagation();quickSave('${r.id}',this)">${isSaved?'♥':'♡'}</button>
     </div>
     <div class="rbody">
@@ -185,7 +185,7 @@ async function showDetail(key) {
   if(!heroEmoji){ heroEmoji = document.createElement('div'); heroEmoji.id='dhero-emoji'; heroEmoji.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:80px;filter:drop-shadow(0 4px 20px rgba(0,0,0,0.6));z-index:1;'; document.querySelector('.dhero').insertBefore(heroEmoji, document.querySelector('.dhero-ov')); }
   heroEmoji.textContent = cs.emoji;
   const pills = [
-    t.hoursNote && {t:t.hoursNote, c:'pill-open'},
+    t.hoursNote && {t:t.hoursNote, c:'pill-price'}, // student-reported hours, not a live open/closed status
     (t.waitNote || t.waitMinutes) && {t:t.waitNote || `~${t.waitMinutes} min wait`, c:'pill-wait'},
     t.priceRange && {t:t.priceRange, c:'pill-price'},
   ].filter(Boolean);
@@ -270,7 +270,7 @@ function renderVoteCards() {
       const v=r.terp.groupVotes||0; const pct=total>0?Math.round(v/total*100):0; const leading=v===maxV&&v>0;
       return `<div class="vcard${vote.mine===r.id?' picked':''}" onclick="castVote('${r.id}')">
         <div class="vheader"><div class="vname">${r.name}</div>${leading?'<div class="vtag">Leading</div>':''}</div>
-        <div class="vmeta">${r.primaryTypeDisplayName} · ${price(r)} · ${r.distanceMiles} mi · ${r.isOpenNow?'Open now':'Closed'}</div>
+        <div class="vmeta">${r.primaryTypeDisplayName} · ${price(r)} · ${r.distanceMiles} mi${typeof r.isOpenNow==='boolean' ? (r.isOpenNow?' · Open now':' · Closed') : ''}</div>
         <div class="vbar-bg"><div class="vbar" style="width:${pct}%"></div></div>
         <div class="vcount">${v} of ${total} voted</div>
       </div>`;
@@ -294,8 +294,15 @@ function renderProfile() {
   if(!history.length){ h.innerHTML = `<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">No visits yet — check in after eating!</div>`; return; }
   return withLoading(h, TerpData.getRestaurants({ids: history.map(c=>c.id)}), list=>{
     const byId = new Map(list.map(r=>[r.id,r]));
-    h.innerHTML = history.map(c=>{ const r=byId.get(c.id); if(!r) return ''; return `<div class="hist"><div><div class="hname">${r.name}</div><div class="hsub">${r.primaryTypeDisplayName} · ${price(r)}</div></div><div class="hdate">${c.date}</div></div>`; }).join('');
+    h.innerHTML = history.map(c=>{ const r=byId.get(c.id); if(!r) return ''; return `<div class="hist"><div><div class="hname">${r.name}</div><div class="hsub">${r.primaryTypeDisplayName} · ${price(r)}</div></div><div class="hdate">${formatDay(c.date)}</div></div>`; }).join('');
   }, renderProfile);
+}
+function formatDay(iso){
+  const d = new Date(iso+'T12:00:00');
+  if(isNaN(d)) return iso;
+  const today = new Date();
+  if(d.toDateString()===today.toDateString()) return 'Today';
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
 }
 function updateStats(){
   const ci=document.getElementById('stat-ci');const sv=document.getElementById('stat-sv');

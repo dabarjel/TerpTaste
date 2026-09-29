@@ -24,12 +24,38 @@ const TerpData = (() => {
 
   const CAMPUS = { lat: 38.9869, lng: -76.9426 }; // McKeldin Mall, UMD College Park
 
-  // ── User state (TerpTaste-only; in memory until there's a backend) ─────────
+  // ── User state (TerpTaste-only) ─────────────────────────────────────────────
+  // Persisted to localStorage when available. Storage can be missing or throw (private
+  // windows, blocked site data), so every access is wrapped and the app falls back to
+  // in-memory state.
+  const STORAGE_KEY = 'terptaste:user:v1';
   const user = {
     saved: new Set(),
     checkIns: [],                                    // [{id, date}], newest first
     vote: { options: ['habanero','qu','aroy'], counts: { habanero:3, qu:1, aroy:0 }, mine: 'habanero' },
   };
+
+  function loadUser() {
+    let data;
+    try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (_) { return; }
+    if (!data || typeof data !== 'object') return;
+    const isStr = s => typeof s === 'string';
+    if (Array.isArray(data.saved)) user.saved = new Set(data.saved.filter(isStr));
+    if (Array.isArray(data.checkIns)) user.checkIns = data.checkIns.filter(c => c && isStr(c.id) && isStr(c.date));
+    const v = data.vote;
+    if (v && Array.isArray(v.options) && v.counts && typeof v.counts === 'object') {
+      const options = v.options.filter(isStr);
+      const counts = {};
+      options.forEach(id => { const n = Number(v.counts[id]); counts[id] = Number.isFinite(n) && n >= 0 ? n : 0; });
+      user.vote = { options, counts, mine: options.includes(v.mine) ? v.mine : null };
+    }
+  }
+  function persist() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ saved: [...user.saved], checkIns: user.checkIns, vote: user.vote }));
+    } catch (_) { /* storage unavailable: keep in-memory state */ }
+  }
+  loadUser();
 
   // ── Source ──────────────────────────────────────────────────────────────────
   // Swap point: replace the body with a fetch to the proxy that returns the same shape.
@@ -55,8 +81,13 @@ const TerpData = (() => {
     const distanceMiles = place.location
       ? Math.round(milesBetween(CAMPUS, place.location) * 10) / 10
       : (_mockDistanceMiles ?? null);
+    // Open status only when hours data says so. null = unknown; the UI shows nothing.
+    const isOpenNow = typeof place.openingHours?.openNow === 'boolean' ? place.openingHours.openNow
+      : typeof place.isOpenNow === 'boolean' ? place.isOpenNow
+      : null;
     return {
       ...fields,
+      isOpenNow,
       distanceMiles,
       terp: {
         studentTags: [],
@@ -84,7 +115,7 @@ const TerpData = (() => {
       const byId = new Map(list.map(r => [r.id, r]));
       list = f.ids.map(id => byId.get(id)).filter(Boolean);
     }
-    if (f.openNow) list = list.filter(r => r.isOpenNow);
+    if (f.openNow) list = list.filter(r => r.isOpenNow === true); // unknown hours never count as open
     if (f.priceLevels?.length) list = list.filter(r => f.priceLevels.includes(r.priceLevel));
     if (f.studentTags?.length) list = list.filter(r => f.studentTags.every(t => r.terp.studentTags.includes(t)));
     if (f.maxDistanceMiles != null) list = list.filter(r => r.distanceMiles != null && r.distanceMiles <= f.maxDistanceMiles);
@@ -104,13 +135,17 @@ const TerpData = (() => {
   }
 
   // ── User actions ────────────────────────────────────────────────────────────
-  function toggleSaved(id) { user.saved.has(id) ? user.saved.delete(id) : user.saved.add(id); return user.saved.has(id); }
-  function setSaved(id, on) { on ? user.saved.add(id) : user.saved.delete(id); return on; }
+  function toggleSaved(id) { user.saved.has(id) ? user.saved.delete(id) : user.saved.add(id); persist(); return user.saved.has(id); }
+  function setSaved(id, on) { on ? user.saved.add(id) : user.saved.delete(id); persist(); return on; }
   function savedIds() { return [...user.saved]; }
 
-  function addCheckIn(id, date = 'Today') {
+  function localDay(d = new Date()) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  function addCheckIn(id, date = localDay()) {  // YYYY-MM-DD, local time
     if (user.checkIns.some(c => c.id === id)) return false;
     user.checkIns.unshift({ id, date });
+    persist();
     return true;
   }
   function checkInHistory() { return user.checkIns.slice(); }
@@ -119,12 +154,14 @@ const TerpData = (() => {
   function addVoteOption(id) {
     if (user.vote.options.includes(id)) return false;
     user.vote.options.push(id); user.vote.counts[id] = 0;
+    persist();
     return true;
   }
   function castVote(id) {
     const v = user.vote;
     if (v.mine) v.counts[v.mine] = Math.max(0, (v.counts[v.mine] || 1) - 1);
     v.mine = id; v.counts[id] = (v.counts[id] || 0) + 1;
+    persist();
   }
 
   return {
