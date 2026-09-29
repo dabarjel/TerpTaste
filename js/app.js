@@ -309,4 +309,11 @@ function showToast(msg){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
+// "Open now" controls stay hidden until the data has real hours for at least one spot.
+function applyFacets(){
+  TerpData.getFacets().then(f=>{
+    document.querySelectorAll('[data-needs-hours]').forEach(el=>{ el.hidden = !f.hasHours; });
+  }).catch(err=>console.error(err));
+}
+applyFacets();
 renderHome('all');

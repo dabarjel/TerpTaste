@@ -128,6 +128,23 @@ const TerpData = (() => {
     return list;
   }
 
+  // What the current data can be filtered by, so the UI only offers options backed by data.
+  //   hasHours     true once any place has real open/closed data (gates "Open now")
+  //   cuisines     distinct primaryTypeDisplayName values, A–Z
+  //   priceLevels  distinct priceLevel values, cheapest first
+  //   studentTags  distinct TerpTaste tags
+  async function getFacets() {
+    const list = (await fetchPlaces()).map(toRestaurant);
+    const uniq = xs => [...new Set(xs.filter(Boolean))];
+    const PRICE_ORDER = ['PRICE_LEVEL_INEXPENSIVE','PRICE_LEVEL_MODERATE','PRICE_LEVEL_EXPENSIVE','PRICE_LEVEL_VERY_EXPENSIVE'];
+    return {
+      hasHours: list.some(r => typeof r.isOpenNow === 'boolean'),
+      cuisines: uniq(list.map(r => r.primaryTypeDisplayName)).sort((a, b) => a.localeCompare(b)),
+      priceLevels: uniq(list.map(r => r.priceLevel)).sort((a, b) => PRICE_ORDER.indexOf(a) - PRICE_ORDER.indexOf(b)),
+      studentTags: uniq(list.flatMap(r => r.terp.studentTags)),
+    };
+  }
+
   async function getRestaurant(id) {
     const [r] = await getRestaurants({ ids: [id] });
     if (!r) throw new Error(`No restaurant with id "${id}".`);
@@ -166,7 +183,7 @@ const TerpData = (() => {
 
   return {
     config,
-    getRestaurants, getRestaurant,
+    getRestaurants, getRestaurant, getFacets,
     toggleSaved, setSaved, savedIds,
     addCheckIn, checkInHistory,
     getVote, addVoteOption, castVote,
