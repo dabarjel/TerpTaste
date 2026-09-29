@@ -94,6 +94,7 @@ const TerpData = (() => {
         ...content,
         saved: user.saved.has(place.id),
         checkIns: user.checkIns.filter(c => c.id === place.id).length,
+        lastCheckIn: user.checkIns.find(c => c.id === place.id)?.date ?? null,
         groupVotes: user.vote.options.includes(place.id) ? (user.vote.counts[place.id] || 0) : null,
       },
     };
@@ -159,6 +160,13 @@ const TerpData = (() => {
   function toggleSaved(id) { user.saved.has(id) ? user.saved.delete(id) : user.saved.add(id); persist(); return user.saved.has(id); }
   function setSaved(id, on) { on ? user.saved.add(id) : user.saved.delete(id); persist(); return on; }
   function savedIds() { return [...user.saved]; }
+  // Put a spot back at its old position (used by Undo after removing it).
+  function restoreSaved(id, index) {
+    const ids = [...user.saved].filter(x => x !== id);
+    ids.splice(Math.max(0, Math.min(index, ids.length)), 0, id);
+    user.saved = new Set(ids);
+    persist();
+  }
 
   function localDay(d = new Date()) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -168,6 +176,19 @@ const TerpData = (() => {
     user.checkIns.unshift({ id, date });
     persist();
     return true;
+  }
+  // Returns the removed entry so Undo can put it back with its original date.
+  function removeCheckIn(id) {
+    const i = user.checkIns.findIndex(c => c.id === id);
+    if (i < 0) return null;
+    const [removed] = user.checkIns.splice(i, 1);
+    persist();
+    return { ...removed, index: i };
+  }
+  function restoreCheckIn(entry) {
+    if (!entry || user.checkIns.some(c => c.id === entry.id)) return;
+    user.checkIns.splice(Math.min(entry.index ?? 0, user.checkIns.length), 0, { id: entry.id, date: entry.date });
+    persist();
   }
   function checkInHistory() { return user.checkIns.slice(); }
 
@@ -188,8 +209,8 @@ const TerpData = (() => {
   return {
     config,
     getRestaurants, getRestaurant, getFacets,
-    toggleSaved, setSaved, savedIds,
-    addCheckIn, checkInHistory,
+    toggleSaved, setSaved, savedIds, restoreSaved,
+    addCheckIn, removeCheckIn, restoreCheckIn, checkInHistory,
     getVote, addVoteOption, castVote,
   };
 })();

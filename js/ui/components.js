@@ -56,15 +56,29 @@ const UI = (() => {
     return `<div class="tt-trust is-student">Student review</div>`;
   }
 
+  // Icon-only heart for cards. data-name lets any save button name the spot in toasts.
   function saveButton(r) {
     const on = !!r.terp.saved;
-    return `<button type="button" class="tt-save" data-save="${esc(r.id)}" aria-pressed="${on}" aria-label="${on ? 'Remove' : 'Save'} ${esc(r.name)}">${on ? '♥' : '♡'}</button>`;
+    return `<button type="button" class="tt-save" data-save="${esc(r.id)}" data-name="${esc(r.name)}" aria-pressed="${on}" aria-label="${on ? 'Remove' : 'Save'} ${esc(r.name)}">${on ? '♥' : '♡'}</button>`;
+  }
+  // Save button with a visible label (detail view, feed). data-off-label sets the unsaved text.
+  function saveTextButton(r, { cls = 'tt-btn', offLabel = '♡ Save' } = {}) {
+    const on = !!r.terp.saved;
+    return `<button type="button" class="${cls}" data-save="${esc(r.id)}" data-name="${esc(r.name)}" data-style="text" data-off-label="${esc(offLabel)}" aria-pressed="${on}">${on ? '♥ Saved' : esc(offLabel)}</button>`;
   }
   // Update a save button in place after a toggle.
   function setSaveButton(btn, on, name) {
     btn.setAttribute('aria-pressed', on);
+    if (btn.dataset.style === 'text') { btn.textContent = on ? '♥ Saved' : (btn.dataset.offLabel || '♡ Save'); return; }
     btn.setAttribute('aria-label', `${on ? 'Remove' : 'Save'} ${name}`);
     btn.textContent = on ? '♥' : '♡';
+  }
+
+  // "2026-09-29" → "Today" or "Sep 29".
+  function formatDay(iso) {
+    const d = new Date(`${iso}T12:00:00`);
+    if (isNaN(d)) return iso || '';
+    return d.toDateString() === new Date().toDateString() ? 'Today' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
   function dataRow(r) {
@@ -79,6 +93,77 @@ const UI = (() => {
         <h3 class="tt-card-name"><button type="button" class="tt-card-link" data-open="${esc(r.id)}">${esc(r.name)}</button></h3>
         ${compact ? '' : trustLine(r)}
         ${dataRow(r)}
+      </div>
+    </article>`;
+  }
+
+  // ── Detail view ───────────────────────────────────────────────────────────
+  const CHEVRON = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const backButton = label => `<button type="button" class="tt-back" data-action="back">${CHEVRON}${esc(label)}</button>`;
+
+  // Check-in state comes from saved data, so it survives closing and reopening the page.
+  function checkInBlock(r) {
+    if (r.terp.checkIns > 0) {
+      return `<div class="tt-checkin is-done">
+        <span class="tt-checkin-text">✓ You checked in ${r.terp.lastCheckIn ? esc(formatDay(r.terp.lastCheckIn).replace(/^Today$/, 'today')) : ''}</span>
+        <button type="button" class="tt-link" data-action="uncheckin">Remove check-in</button>
+      </div>`;
+    }
+    return `<div class="tt-checkin">
+      <button type="button" class="tt-btn tt-btn--primary tt-btn--block" data-action="checkin">Check in here</button>
+      <p class="tt-checkin-hint">Been here? Checking in adds it to your visit history.</p>
+    </div>`;
+  }
+
+  function detail(r, { backLabel = 'Back' } = {}) {
+    const t = r.terp;
+    const facts = [
+      t.hoursNote && ['Hours', t.hoursNote, 'reported by students'],
+      (t.waitNote || t.waitMinutes) && ['Wait', t.waitNote || `About ${t.waitMinutes} min`],
+      t.priceRange && ['Typical price', t.priceRange],
+    ].filter(Boolean);
+    const rv = t.review;
+    const review = rv ? `<section class="tt-dsec">
+        <h2 class="tt-dsec-title">${rv.isFriend ? 'From your friends' : 'Student review'}</h2>
+        <blockquote class="tt-quote">
+          <p>“${esc(rv.quote)}”</p>
+          <footer>${rv.isFriend ? `<span class="tt-avatar" style="background:${avatarColor(rv.author)}" aria-hidden="true">${esc(initials(rv.author))}</span>` : ''}${esc(rv.author)}, ${rv.authorCheckIns} ${rv.authorCheckIns === 1 ? 'check-in' : 'check-ins'}</footer>
+        </blockquote>
+      </section>` : '';
+    return `<article class="tt-detail">
+      <div class="tt-detail-hero">${photoTile(r)}${openStatus(r)}</div>
+      <div class="tt-detail-body">
+        ${backButton(backLabel)}
+        <header class="tt-detail-head">
+          <h1 class="tt-detail-name">${esc(r.name)}</h1>
+          <p class="tt-detail-cuisine">${esc(r.primaryTypeDisplayName || '')}</p>
+          ${dataRow(r)}
+        </header>
+        <div class="tt-detail-actions">
+          ${saveTextButton(r)}
+          <button type="button" class="tt-btn" data-action="vote">Add to group vote</button>
+        </div>
+        <div id="detail-checkin">${checkInBlock(r)}</div>
+        <div class="tt-detail-cols">
+          <div>
+            ${review}
+            ${t.menu ? `<section class="tt-dsec"><h2 class="tt-dsec-title">On the menu</h2><p class="tt-dtext">${esc(t.menu)}</p></section>` : ''}
+          </div>
+          <div>
+            ${facts.length ? `<section class="tt-dsec"><h2 class="tt-dsec-title">Good to know</h2><dl class="tt-facts">${facts.map(([k, v, note]) =>
+              `<div><dt>${esc(k)}</dt><dd>${esc(v)}${note ? ` <span class="tt-fact-note">${esc(note)}</span>` : ''}</dd></div>`).join('')}</dl></section>` : ''}
+            ${t.dietNotes?.length ? `<section class="tt-dsec"><h2 class="tt-dsec-title">Dietary notes</h2><ul class="tt-dlist">${t.dietNotes.map(d => `<li>${esc(d)}</li>`).join('')}</ul></section>` : ''}
+          </div>
+        </div>
+      </div>
+    </article>`;
+  }
+
+  function detailSkeleton(backLabel) {
+    return `<article class="tt-detail" aria-busy="true">
+      <div class="tt-detail-hero"><div class="tt-skel-block tt-skel-hero"></div></div>
+      <div class="tt-detail-body">${backButton(backLabel)}
+        <div class="tt-skel-block tt-skel-title"></div><div class="tt-skel-block tt-skel-line"></div>
       </div>
     </article>`;
   }
@@ -125,6 +210,7 @@ const UI = (() => {
   }
 
   return { esc, price, walkMinutes, walkLabel, miles, avatarColor, initials,
-    photoTile, openStatus, trustLine, card, setSaveButton, chip,
+    photoTile, openStatus, trustLine, card, setSaveButton, saveTextButton, chip, formatDay,
+    detail, detailSkeleton, checkInBlock, backButton,
     skeletonCards, emptyState, errorState, mount };
 })();

@@ -1,33 +1,5 @@
-// ── RESTAURANT DATA ───────────────────────────────────────────────────────────
-// Card visuals: emoji + cuisine-matched gradient. Always clear, zero network deps.
-const CARD_STYLES = {
-  habanero:     { emoji: '🌮', grad: 'linear-gradient(135deg,#6B1F1F,#C0392B)' },
-  aroy:         { emoji: '🍜', grad: 'linear-gradient(135deg,#1A0A2E,#6C3483)' },
-  marathon:     { emoji: '🥙', grad: 'linear-gradient(135deg,#0D2137,#1F618D)' },
-  qu:           { emoji: '🍜', grad: 'linear-gradient(135deg,#0B2F1A,#1E8449)' },
-  shagga:       { emoji: '🍛', grad: 'linear-gradient(135deg,#4A2200,#A04000)' },
-  playa:        { emoji: '🍇', grad: 'linear-gradient(135deg,#2C0A3C,#7D3C98)' },
-  spice6:       { emoji: '🍛', grad: 'linear-gradient(135deg,#3E1700,#D35400)' },
-  busboys:      { emoji: '☕', grad: 'linear-gradient(135deg,#1A0D00,#6E3E1C)' },
-  canes:        { emoji: '🍗', grad: 'linear-gradient(135deg,#5C0000,#E53935)' },
-  saburo:       { emoji: '🍜', grad: 'linear-gradient(135deg,#0B1F3A,#1565C0)' },
-  hanami:       { emoji: '🍣', grad: 'linear-gradient(135deg,#0A1628,#0E4D92)' },
-  pupuseria:    { emoji: '🫓', grad: 'linear-gradient(135deg,#3B1A00,#8D4E00)' },
-  jumbojumbo:   { emoji: '🐔', grad: 'linear-gradient(135deg,#3D1100,#BF360C)' },
-  tacosmadre:   { emoji: '🌮', grad: 'linear-gradient(135deg,#4A1000,#C0392B)' },
-  federalist:   { emoji: '🥩', grad: 'linear-gradient(135deg,#2A0A00,#784212)' },
-  theHall:      { emoji: '🍔', grad: 'linear-gradient(135deg,#1A1200,#7D6608)' },
-  ritchies:     { emoji: '🫔', grad: 'linear-gradient(135deg,#1A3300,#27AE60)' },
-  yums:         { emoji: '🥡', grad: 'linear-gradient(135deg,#003318,#0B6623)' },
-  franklinsbeer:{ emoji: '🍕', grad: 'linear-gradient(135deg,#2A1400,#935116)' },
-  northwest:    { emoji: '🥟', grad: 'linear-gradient(135deg,#001F3A,#1A5276)' },
-  latao:        { emoji: '🫕', grad: 'linear-gradient(135deg,#3A0000,#C0392B)' },
-  eddiescafe:   { emoji: '🍊', grad: 'linear-gradient(135deg,#3A1400,#BA4A00)' },
-};
-
 // Restaurant data comes only from TerpData (js/data/restaurants.js); markup from UI (js/ui/components.js).
 const price = UI.price;
-const cardStyle = id => CARD_STYLES[id] || {emoji:'🍽',grad:'linear-gradient(135deg,#1a1a1a,#333)'};
 
 // Loading skeleton (only if the fetch takes over 150ms, so fast loads don't flicker),
 // then render, or an error state with Try again.
@@ -40,51 +12,81 @@ function withLoading(el, promise, render, retry, skeleton = UI.skeletonCards(3))
   });
 }
 
+// ── SAVE (every save button in the app goes through here) ────────────────────
+// Keep every visible button for the same spot in step (card heart, detail, feed).
+function syncSaveButtons(id){
+  const on = TerpData.savedIds().includes(id);
+  document.querySelectorAll(`[data-save="${CSS.escape(id)}"]`).forEach(b=>UI.setSaveButton(b, on, b.dataset.name || ''));
+}
+function syncAllSaveButtons(){
+  const saved = new Set(TerpData.savedIds());
+  document.querySelectorAll('[data-save]').forEach(b=>UI.setSaveButton(b, saved.has(b.dataset.save), b.dataset.name || ''));
+}
+function afterSavedChange(id){
+  syncSaveButtons(id);
+  updateStats();
+  if(activePanel()==='saved') renderSaved();
+}
+function toggleSavedWithUndo(id, name){
+  const index = TerpData.savedIds().indexOf(id);
+  const on = TerpData.toggleSaved(id);
+  afterSavedChange(id);
+  if(on){ showToast(`Saved ${name}`); return; }
+  showToast(`Removed ${name} from saved`, { action:{ label:'Undo', run:()=>{
+    TerpData.restoreSaved(id, index);
+    afterSavedChange(id);
+    showToast(`${name} is back in saved`);
+  }}});
+}
+
 // Cards anywhere in the app: open on click, save with the heart.
 document.addEventListener('click', e=>{
   const save = e.target.closest('[data-save]');
-  if(save){
-    const id = save.dataset.save;
-    const on = TerpData.toggleSaved(id);
-    const name = save.closest('.tt-card')?.querySelector('.tt-card-link')?.textContent || '';
-    UI.setSaveButton(save, on, name);
-    showToast(on ? `Saved ${name}` : `Removed ${name} from saved`);
-    updateStats();
-    return;
-  }
+  if(save){ toggleSavedWithUndo(save.dataset.save, save.dataset.name || ''); return; }
   const open = e.target.closest('[data-open]');
   if(open) showDetail(open.dataset.open);
 });
 
-// ── STATE ─────────────────────────────────────────────────────────────────────
-let currentKey = null;
-let currentRestaurant = null;
-
 // ── NAV ───────────────────────────────────────────────────────────────────────
 const pages = ['home','filter','group','friends','saved','profile'];
-function go(id) {
+const activePanel = () => (document.querySelector('.panel.active')?.id || '').replace('panel-','');
+const scrollMemory = {};
+
+function showPanel(id){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
-  document.getElementById('main-scroll').scrollTop = 0;
+}
+function highlightNav(id){
   pages.forEach(pg=>{
     const isA = pg===id;
     ['sb-','mn-'].forEach(pre=>{
       const el = document.getElementById(pre+pg);
       if(!el) return;
       el.classList.toggle('active', isA);
-      el.querySelectorAll('path,circle,line,polyline,rect').forEach(e=>{
-        const tag = e.tagName.toLowerCase();
-        if(tag==='rect') return; // don't stroke rect fill
-        e.setAttribute('stroke',isA?'var(--terp-gold)':'var(--text-muted)');
-      });
+      el.querySelectorAll('path,circle,line,polyline').forEach(e=>e.setAttribute('stroke',isA?'var(--terp-gold)':'var(--text-muted)'));
     });
   });
-  if(id==='home') renderHome();
-  if(id==='filter') renderFilterPanel();
-  if(id==='saved') renderSaved();
-  if(id==='profile') renderProfile();
-  if(id==='group') renderGroup();
 }
+// restoreScroll: return to where the user was on that screen (used by Back from detail).
+function go(id, { restoreScroll = false } = {}) {
+  const scroller = document.getElementById('main-scroll');
+  showPanel(id);
+  highlightNav(id);
+  scroller.scrollTop = 0;
+  let rendering;
+  if(id==='home') rendering = renderHome();
+  if(id==='filter') renderFilterPanel();
+  if(id==='saved') rendering = renderSaved();
+  if(id==='profile') rendering = renderProfile();
+  if(id==='group') renderGroup();
+  if(id==='friends') syncAllSaveButtons();
+  if(restoreScroll){
+    const y = scrollMemory[id] || 0;
+    // The list is in the DOM once rendering resolves, so the position can be set right away.
+    Promise.resolve(rendering).then(()=>{ if(activePanel()===id) scroller.scrollTop = y; });
+  }
+}
+
 
 // ── FILTERS (one state shared by Home search, Home chips and the Filter panel) ──
 const INEXPENSIVE = 'PRICE_LEVEL_INEXPENSIVE';
@@ -261,91 +263,94 @@ document.getElementById('filter-clear').addEventListener('click', ()=>clearAllFi
 document.getElementById('filter-apply').addEventListener('click', ()=>go('home'));
 
 // ── DETAIL ────────────────────────────────────────────────────────────────────
+const BACK_LABELS = { home:'Back to Discover', saved:'Back to Saved', friends:'Back to Friends', group:'Back to Group vote', profile:'Back to Profile', filter:'Back to Filter' };
+let detailFrom = 'home';
 let detailReq = 0;
+
+// Opens right away with a skeleton, then fills in. Back returns to the screen (and
+// scroll position) the user came from.
 async function showDetail(key) {
+  const from = activePanel();
+  if(from && from!=='detail'){ detailFrom = from; scrollMemory[from] = document.getElementById('main-scroll').scrollTop; }
   const req = ++detailReq;
+  const root = document.getElementById('detail-root');
+  const backLabel = BACK_LABELS[detailFrom] || 'Back';
+  const handlers = { back: goBack };
+  showPanel('detail');
+  highlightNav(detailFrom);                         // stay "inside" the screen you came from
+  document.getElementById('main-scroll').scrollTop = 0;
+  const t = setTimeout(()=>{ if(req===detailReq) UI.mount(root, UI.detailSkeleton(backLabel), handlers); }, 150);
   let r;
   try { r = await TerpData.getRestaurant(key); }
-  catch(err){ console.error(err); showToast('That restaurant didn’t load. Try again.'); return; }
+  catch(err){
+    clearTimeout(t); console.error(err);
+    if(req!==detailReq) return;
+    UI.mount(root, `<div class="tt-detail-body">${UI.backButton(backLabel)}${UI.errorState({ title:'This spot didn’t load' })}</div>`,
+      { ...handlers, retry: ()=>showDetail(key) });
+    return;
+  }
+  clearTimeout(t);
   if(req!==detailReq) return;
-  currentKey = key;
-  currentRestaurant = r;
-  const t = r.terp;
-  document.getElementById('dname').textContent = r.name;
-  document.getElementById('dsub').textContent = `${r.primaryTypeDisplayName} · ${price(r)} · ${r.distanceMiles} mi away`;
-  const cs = cardStyle(key);
-  const heroBg = document.getElementById('dhero-bg');
-  heroBg.className = 'dhero-bg';
-  heroBg.style.background = cs.grad;
-  let heroEmoji = document.getElementById('dhero-emoji');
-  if(!heroEmoji){ heroEmoji = document.createElement('div'); heroEmoji.id='dhero-emoji'; heroEmoji.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:80px;filter:drop-shadow(0 4px 20px rgba(0,0,0,0.6));z-index:1;'; document.querySelector('.dhero').insertBefore(heroEmoji, document.querySelector('.dhero-ov')); }
-  heroEmoji.textContent = cs.emoji;
-  const pills = [
-    t.hoursNote && {t:t.hoursNote, c:'pill-price'}, // student-reported hours, not a live open/closed status
-    (t.waitNote || t.waitMinutes) && {t:t.waitNote || `~${t.waitMinutes} min wait`, c:'pill-wait'},
-    t.priceRange && {t:t.priceRange, c:'pill-price'},
-  ].filter(Boolean);
-  document.getElementById('dpills').innerHTML = pills.map(p=>`<div class="pill ${p.c}">${p.t}</div>`).join('');
-  const rv = t.review;
-  document.getElementById('dtrust').innerHTML = rv ? `<p>"${rv.quote}"</p><p class="src">— ${rv.author} · ${rv.authorCheckIns} check-ins</p>` : '';
-  document.getElementById('dmenu').textContent = t.menu || '';
-  document.getElementById('ddiet').innerHTML = (t.dietNotes||[]).map(d=>`<div class="dtag">✓ ${d}</div>`).join('');
-  const sb = document.getElementById('save-btn');
-  sb.textContent = t.saved ? '♥ Saved' : '♡ Save';
-  sb.className = 'abtn'+(t.saved?' saved-active':'');
-  const cb = document.getElementById('checkin-btn');
-  cb.textContent = 'Been Here — Check In'; cb.className = 'checkin-btn';
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('panel-detail').classList.add('active');
-  document.getElementById('main-scroll').scrollTop = 0;
-  pages.forEach(pg=>{
-    ['sb-','mn-'].forEach(pre=>{const el=document.getElementById(pre+pg);if(el){el.classList.remove('active');el.querySelectorAll('path,circle,line,polyline').forEach(e=>e.setAttribute('stroke','var(--text-muted)'));}});
+  UI.mount(root, UI.detail(r, { backLabel }), {
+    ...handlers,
+    vote: ()=>suggestToGroup(r),
+  });
+  bindCheckIn(r);
+}
+function goBack(){ go(detailFrom, { restoreScroll:true }); }
+
+function suggestToGroup(r){
+  const added = TerpData.addVoteOption(r.id);
+  showToast(added ? `Added ${r.name} to the group vote` : `${r.name} is already in the group vote`,
+    { action:{ label:'View vote', run:()=>go('group') } });
+}
+
+// Check-in block re-renders from saved data after every change.
+async function refreshCheckIn(id){
+  const r = await TerpData.getRestaurant(id);
+  bindCheckIn(r);
+  updateStats();
+}
+function bindCheckIn(r){
+  const el = document.getElementById('detail-checkin');
+  if(!el) return;
+  UI.mount(el, UI.checkInBlock(r), {
+    checkin: ()=>{
+      TerpData.addCheckIn(r.id);
+      refreshCheckIn(r.id);
+      showToast(`Checked in at ${r.name}`, { action:{ label:'Undo', run:()=>{ TerpData.removeCheckIn(r.id); refreshCheckIn(r.id); } } });
+    },
+    uncheckin: ()=>{
+      const removed = TerpData.removeCheckIn(r.id);
+      refreshCheckIn(r.id);
+      showToast(`Removed check-in at ${r.name}`, { action:{ label:'Undo', run:()=>{ TerpData.restoreCheckIn(removed); refreshCheckIn(r.id); } } });
+    },
   });
 }
 
-function toggleSave() {
-  if(!currentKey) return;
-  const isSaved = TerpData.toggleSaved(currentKey);
-  showToast(isSaved ? 'Saved! ♥' : 'Removed from saved');
-  const sb = document.getElementById('save-btn');
-  sb.textContent = isSaved?'♥ Saved':'♡ Save';
-  sb.className = 'abtn'+(isSaved?' saved-active':'');
-  updateStats();
-}
-
-function saveFromFeed(key) {
-  TerpData.setSaved(key, true); updateStats();
-  TerpData.getRestaurant(key).then(r=>showToast(`Saved ${r.name}! ♥`)).catch(()=>showToast('Saved! ♥'));
-}
-
-function checkIn() {
-  if(!currentKey) return;
-  const btn = document.getElementById('checkin-btn');
-  btn.textContent = '✓ Checked In!'; btn.className = 'checkin-btn done';
-  TerpData.addCheckIn(currentKey);
-  updateStats(); showToast(`Checked into ${currentRestaurant.name}!`);
-}
-
 // ── SAVED ─────────────────────────────────────────────────────────────────────
+// Newest saves first. Removing one (heart) re-renders the list and offers Undo.
+let savedReq = 0;
 function renderSaved() {
+  const req = ++savedReq;
   const el = document.getElementById('saved-content');
-  const ids = TerpData.savedIds();
+  const sub = document.getElementById('saved-sub');
+  const ids = TerpData.savedIds().reverse();
+  sub.textContent = ids.length ? `${ids.length} saved ${ids.length===1?'spot':'spots'}, newest first` : 'Your shortlist';
   if(!ids.length){
     UI.mount(el, `<div class="tt-gutter">${UI.emptyState({
       title: 'No saved spots yet',
       body: 'Tap ♡ on any spot, or Save spot in the Friends feed, to keep it here.',
       action: { label:'Browse spots', name:'browse' },
     })}</div>`, { browse: ()=>go('home') });
-    return;
+    return Promise.resolve();
   }
   return withLoading(el, TerpData.getRestaurants({ids}), list=>{
-    let h = `<div class="saved-grid">`;
-    list.forEach(r=>{h+=`<div class="saved-item" onclick="showDetail('${r.id}')"><div><div class="saved-name">${r.name}</div><div class="saved-meta">${r.primaryTypeDisplayName} · ${price(r)} · ${r.distanceMiles} mi</div></div><div class="saved-remove" onclick="event.stopPropagation();unsave('${r.id}')">×</div></div>`;});
-    h+=`</div>`;
-    el.innerHTML = h;
+    if(req!==savedReq) return;
+    el.innerHTML = `<div class="cgrid tt-saved-grid">${list.map(r=>UI.card(r)).join('')}</div><div style="height:20px;"></div>`;
   }, renderSaved, UI.skeletonCards(2));
 }
-function unsave(key){ TerpData.setSaved(key, false); renderSaved(); updateStats(); showToast('Removed from saved'); }
+
 
 // ── GROUP ─────────────────────────────────────────────────────────────────────
 function renderGroup() {
@@ -397,15 +402,8 @@ function renderProfile() {
   if(!history.length){ h.innerHTML = `<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">No visits yet — check in after eating!</div>`; return; }
   return withLoading(h, TerpData.getRestaurants({ids: history.map(c=>c.id)}), list=>{
     const byId = new Map(list.map(r=>[r.id,r]));
-    h.innerHTML = history.map(c=>{ const r=byId.get(c.id); if(!r) return ''; return `<div class="hist"><div><div class="hname">${r.name}</div><div class="hsub">${r.primaryTypeDisplayName} · ${price(r)}</div></div><div class="hdate">${formatDay(c.date)}</div></div>`; }).join('');
+    h.innerHTML = history.map(c=>{ const r=byId.get(c.id); if(!r) return ''; return `<div class="hist"><div><div class="hname">${r.name}</div><div class="hsub">${r.primaryTypeDisplayName} · ${price(r)}</div></div><div class="hdate">${UI.formatDay(c.date)}</div></div>`; }).join('');
   }, renderProfile, UI.skeletonCards(1));
-}
-function formatDay(iso){
-  const d = new Date(iso+'T12:00:00');
-  if(isNaN(d)) return iso;
-  const today = new Date();
-  if(d.toDateString()===today.toDateString()) return 'Today';
-  return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
 }
 function updateStats(){
   const ci=document.getElementById('stat-ci');const sv=document.getElementById('stat-sv');
@@ -420,11 +418,24 @@ function surpriseMe(){
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
+// Optional action (e.g. Undo) keeps the toast up longer so there's time to use it.
 let tTimer;
-function showToast(msg){
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  clearTimeout(tTimer);tTimer=setTimeout(()=>t.classList.remove('show'),2200);
+function showToast(msg, { action } = {}){
+  const t = document.getElementById('toast');
+  const btn = document.getElementById('toast-action');
+  document.getElementById('toast-msg').textContent = msg;
+  btn.hidden = !action;
+  btn.onclick = null;
+  if(action){
+    btn.textContent = action.label;
+    btn.onclick = ()=>{ hideToast(); action.run(); };
+  }
+  t.classList.add('show');
+  clearTimeout(tTimer);
+  tTimer = setTimeout(hideToast, action ? 6000 : 2400);
 }
+function hideToast(){ clearTimeout(tTimer); document.getElementById('toast').classList.remove('show'); }
+
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 // Filter options come from the data. "Open now" only appears once some spot has real hours,

@@ -62,7 +62,7 @@ Done:
 Built in four groups, with a stop for review after each:
 1. ✅ Restaurant card, photo fallback, loading/empty/error states (`js/ui/components.js`, `css/components.css`)
 2. ✅ Search bar and filter chips, with the Filter panel actually filtering
-3. Detail view, check-in, Saved Spots
+3. ✅ Detail view, check-in, Saved Spots (includes Back-to-origin, persistent check-in state, and Undo from Phase 4)
 4. Group Vote scoreboard and nav, with Saved in the mobile nav
 
 Build or rebuild these as reusable pieces using tokens only:
@@ -89,8 +89,8 @@ Priority fixes from the UX heuristics review (2026-09-29), component level:
 Rebuild each page with the new components:
 1. Home / Discover: walk-time sections replace "For You / Budget / More nearby / Worth the trip"; each spot appears once. Drop "For You — based on your preferences" unless it actually uses the profile preferences.
 2. Search results
-3. Restaurant detail: "Back" returns to wherever the user came from (Saved, Friends, Group, Surprise me), not always Home. Check-in state persists when the page is reopened.
-4. Saved Spots: removing a spot shows an Undo action in the toast.
+3. Restaurant detail: ✅ done in Phase 3 group 3: "Back" returns to wherever the user came from (Saved, Friends, Group, Surprise me), not always Home. Check-in state persists when the page is reopened.
+4. Saved Spots: ✅ done in Phase 3 group 3: removing a spot shows an Undo action in the toast.
 5. Group vote flow: scoreboard board; the picker offers every restaurant (not just the first 12); options can be removed.
 Also: "Surprise me" picks at random instead of stepping through the list in order.
 Leave a placeholder spot on Discover and Detail for a map later. Don't build the map yet.

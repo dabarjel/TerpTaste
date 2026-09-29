@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
-<div class="toast" id="toast"></div>
+<div class="tt-toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button type="button" class="tt-toast-action" id="toast-action" hidden></button></div>
 <div class="app-shell">
 
   <!-- SIDEBAR -->
@@ -71,30 +71,7 @@
       </div>
 
       <!-- DETAIL -->
-      <div class="panel" id="panel-detail">
-        <div class="dhero"><div class="dhero-bg" id="dhero-bg"></div><div class="dhero-ov"></div><div class="dtitle"><div class="dname" id="dname"></div><div class="dsub" id="dsub"></div></div></div>
-        <div class="dbody">
-          <button class="back-btn" onclick="go('home')">← Back to results</button>
-          <div class="pills" id="dpills"></div>
-          <div class="dcols">
-            <div>
-              <div class="ds">From your people</div>
-              <div class="tblock" id="dtrust"></div>
-              <div class="ds">On the menu</div>
-              <div class="dmenu" id="dmenu"></div>
-            </div>
-            <div>
-              <div class="ds">Dietary info</div>
-              <div class="dtags" id="ddiet"></div>
-              <div class="dactions">
-                <button class="abtn" onclick="go('group')">Suggest to Group →</button>
-                <button class="abtn" id="save-btn" onclick="toggleSave()">♡ Save</button>
-              </div>
-              <button class="checkin-btn" id="checkin-btn" onclick="checkIn()">Been Here — Check In</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="panel" id="panel-detail"><div id="detail-root"></div></div>
 
       <!-- FILTER -->
       <div class="panel" id="panel-filter">
@@ -128,19 +105,18 @@
         <div class="ph"><div><div class="ph-title">Friends Feed</div><div class="ph-sub">Real check-ins from people you actually know — no bots, no fake reviews</div></div></div>
         <div style="height:14px;"></div>
         <div class="fgrid">
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-red);">JT</div><div><div class="fwho">Jordan T.</div><div class="fwhen">2 hours ago</div></div></div><div class="frest">Taqueria Habanero</div><div class="fquote">"Al pastor and a hibiscus agua fresca — that's the move. Michelin for a reason."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('habanero')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-blue);">AK</div><div><div class="fwho">Aisha K.</div><div class="fwhen">Yesterday · 7pm</div></div></div><div class="frest">Aroy Thai</div><div class="fquote">"Got the drunken noodles on 3-star spice. Do NOT underestimate it. So good though."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('aroy')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-green);">MR</div><div><div class="fwho">Marcus R.</div><div class="fwhen">2 days ago</div></div></div><div class="frest">Shagga Ethiopian</div><div class="fquote">"Ubered over and split the combo platter with 2 friends. $16 each, stuffed. Go."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('shagga')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-purple);">SP</div><div><div class="fwho">Simone P.</div><div class="fwhen">3 days ago</div></div></div><div class="frest">Marathon Deli</div><div class="fquote">"Marathon fries at midnight after studying. Classic. $4. They never miss."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('marathon')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-orange);">KB</div><div><div class="fwho">Kevin B.</div><div class="fwhen">4 days ago</div></div></div><div class="frest">Raising Cane's</div><div class="fquote">"Three Finger Combo after lecture. Cane's sauce goes crazy. Always a line but worth the 8 minutes."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('canes')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-teal);">PR</div><div><div class="fwho">Priya R.</div><div class="fwhen">5 days ago</div></div></div><div class="frest">Spice 6</div><div class="fquote">"Naan pizza with tikka masala. $14 and you'll be full for the rest of the day."</div><div class="factions"><div class="fa fire">🔥 Same</div><div class="fa" onclick="saveFromFeed('spice6')">♡ Save spot</div><div class="fa" onclick="go('group')">Send to group</div></div></div>
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-red);">JT</div><div><div class="fwho">Jordan T.</div><div class="fwhen">2 hours ago</div></div></div><div class="frest">Taqueria Habanero</div><div class="fquote">"Al pastor and a hibiscus agua fresca — that's the move. Michelin for a reason."</div><div class="factions"><div class="fa fire">🔥 Same</div><button type="button" class="fa" data-save="habanero" data-name="Taqueria Habanero" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><div class="fa" onclick="go('group')">Send to group</div></div></div>
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-blue);">AK</div><div><div class="fwho">Aisha K.</div><div class="fwhen">Yesterday · 7pm</div></div></div><div class="frest">Aroy Thai</div><div class="fquote">"Got the drunken noodles on 3-star spice. Do NOT underestimate it. So good though."</div><div class="factions"><div class="fa fire">🔥 Same</div><button type="button" class="fa" data-save="aroy" data-name="Aroy Thai" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><div class="fa" onclick="go('group')">Send to group</div></div></div>
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-green);">MR</div><div><div class="fwho">Marcus R.</div><div class="fwhen">2 days ago</div></div></div><div class="frest">Shagga Ethiopian</div><div class="fquote">"Ubered over and split the combo platter with 2 friends. $16 each, stuffed. Go."</div><div class="factions"><div class="fa fire">🔥 Same</div><button type="button" class="fa" data-save="shagga" data-name="Shagga Ethiopian" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><div class="fa" onclick="go('group')">Send to group</div></div></div>
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-purple);">SP</div><div><div class="fwho">Simone P.</div><div class="fwhen">3 days ago</div></div></div><div class="frest">Marathon Deli</div><div class="fquote">"Marathon fries at midnight after studying. Classic. $4. They never miss."</div><div class="factions"><div class="fa fire">🔥 Same</div><button type="button" class="fa" data-save="marathon" data-name="Marathon Deli" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><div class="fa" onclick="go('group')">Send to group</div></div></div>
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-orange);">KB</div><div><div class="fwho">Kevin B.</div><div class="fwhen">4 days ago</div></div></div><div class="frest">Raising Cane's</div><div class="fquote">"Three Finger Combo after lecture. Cane's sauce goes crazy. Always a line but worth the 8 minutes."</div><div class="factions"><div class="fa fire">🔥 Same</div><button type="button" class="fa" data-save="canes" data-name="Raising Cane's" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><div class="fa" onclick="go('group')">Send to group</div></div></div>
+          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-teal);">PR</div><div><div class="fwho">Priya R.</div><div class="fwhen">5 days ago</div></div></div><div class="frest">Spice 6</div><div class="fquote">"Naan pizza with tikka masala. $14 and you'll be full for the rest of the day."</div><div class="factions"><div class="fa fire">🔥 Same</div><button type="button" class="fa" data-save="spice6" data-name="Spice 6" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><div class="fa" onclick="go('group')">Send to group</div></div></div>
         </div>
       </div>
 
       <!-- SAVED -->
       <div class="panel" id="panel-saved">
-        <div class="ph"><div><div class="ph-title">Saved Spots</div><div class="ph-sub">Your personal shortlist</div></div></div>
-        <div style="height:14px;"></div>
+        <div class="ph"><div><div class="ph-title">Saved Spots</div><div class="ph-sub" id="saved-sub">Your shortlist</div></div></div>
         <div id="saved-content"></div>
       </div>
 
