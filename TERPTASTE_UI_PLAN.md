@@ -41,7 +41,15 @@ Done: `css/tokens.css` and `styleguide.html`. Step 2 (migrating `css/app.css` to
 2. Replace every hardcoded color, font size, and spacing value in the existing CSS with tokens.
 3. Build a simple `styleguide.html` page that shows every token and base component, so I can review the system in one place.
 
-## Phase 2: Data layer prep (sets up the Google API swap)
+## Phase 2: Data layer prep (sets up the Google API swap) ✅
+Done:
+- `js/data/mock-places.js` has Google-shaped place records. Unknown fields (address, location, rating, userRatingCount, openingHours) are `null`, not invented.
+- `js/data/terp-content.js` has TerpTaste-owned content keyed by place id. `review.isFriend` is ready for the trust-label fix in Phase 3.
+- `js/data/restaurants.js` provides `TerpData.getRestaurants(filters)` / `getRestaurant(id)` plus user state (saved, check-ins, group vote). `fetchPlaces()` is the only function the proxy swap replaces.
+- `?delay=500` adds latency; `?fail=1` forces the error path.
+- `js/app.js` reads only through `TerpData`. Phase 2 has no visible change, except that the detail wait pill now always reads "~N min wait". Minimal "Loading…" and "Try again" placeholders stand in until Phase 3's components.
+
+
 1. Create `js/data/restaurants.js` with one async function: `getRestaurants(filters)` that returns a Promise.
 2. For now it reads the local mock data. Later it'll call a backend proxy that talks to Google Places. The UI should never know the difference.
 3. Normalize the mock data to match fields Google Places returns:
