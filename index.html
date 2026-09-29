@@ -60,17 +60,14 @@
           </div>
           <button class="surprise-btn" onclick="surpriseMe()">🎲 Surprise Me</button>
         </div>
-        <div class="chips" id="home-chips">
-          <div class="chip active" onclick="filterChip(this,'all')">All</div>
-          <div class="chip" data-needs-hours hidden onclick="filterChip(this,'open')">Open Now</div>
-          <div class="chip" onclick="filterChip(this,'budget')">Under $15</div>
-          <div class="chip" onclick="filterChip(this,'fast')">Fast Food</div>
-          <div class="chip" onclick="filterChip(this,'sitdown')">Sit-Down</div>
-          <div class="chip" onclick="filterChip(this,'cafe')">Café</div>
-          <div class="chip" onclick="filterChip(this,'vegan')">Vegan</div>
-          <div class="chip" onclick="filterChip(this,'halal')">Halal</div>
+        <div class="tt-controls">
+          <label class="tt-search">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M13 13l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <input type="search" id="home-search" placeholder="Search spots or dishes" aria-label="Search spots or dishes" autocomplete="off" enterkeyhint="search">
+          </label>
+          <div class="tt-chips" id="home-chips" role="group" aria-label="Quick filters"></div>
         </div>
-        <div id="home-content"></div>
+        <div id="home-content" aria-live="polite"></div>
       </div>
 
       <!-- DETAIL -->
@@ -101,15 +98,9 @@
 
       <!-- FILTER -->
       <div class="panel" id="panel-filter">
-        <div class="ph"><div><div class="ph-title">Filter</div><div class="ph-sub">Narrow down your options</div></div><div style="font-size:13px;color:var(--terp-red);cursor:pointer;font-weight:600;" onclick="clearFilters()">Clear all</div></div>
-        <div class="fbody">
-          <div class="fgroup"><div class="fgtitle">Cuisine type</div><div class="fopts"><div class="fopt sel" onclick="tF(this)">All</div><div class="fopt" onclick="tF(this)">Fast Food</div><div class="fopt" onclick="tF(this)">Sit-Down</div><div class="fopt" onclick="tF(this)">Café</div><div class="fopt" onclick="tF(this)">Asian</div><div class="fopt" onclick="tF(this)">Mexican</div><div class="fopt" onclick="tF(this)">Ethiopian</div><div class="fopt" onclick="tF(this)">Indian</div><div class="fopt" onclick="tF(this)">Mediterranean</div><div class="fopt" onclick="tF(this)">BBQ</div><div class="fopt" onclick="tF(this)">Latin</div></div></div>
-          <div class="fgroup"><div class="fgtitle">Price range</div><div class="pgrid"><div class="popt sel" onclick="tP(this)">$</div><div class="popt sel" onclick="tP(this)">$$</div><div class="popt" onclick="tP(this)">$$$</div><div class="popt" onclick="tP(this)">$$$$</div></div></div>
-          <div class="fgroup"><div class="fgtitle">Max distance: <span id="dval">0.5</span> mi</div><input type="range" min="1" max="30" value="5" step="1" oninput="document.getElementById('dval').textContent=(this.value/10).toFixed(1)"><div class="rlabels"><span>0.1 mi</span><span>3.0 mi</span></div></div>
-          <div class="fgroup"><div class="fgtitle">Dietary needs</div><div class="fopts"><div class="fopt" onclick="tF(this)">Vegetarian</div><div class="fopt" onclick="tF(this)">Vegan</div><div class="fopt" onclick="tF(this)">Gluten-Free</div><div class="fopt" onclick="tF(this)">Halal</div><div class="fopt" onclick="tF(this)">Kosher</div><div class="fopt" onclick="tF(this)">Dairy-Free</div></div></div>
-          <div class="fgroup"><div class="fgtitle">Hours</div><div class="fopts"><div class="fopt" data-needs-hours hidden onclick="tF(this)">Open Now</div><div class="fopt" onclick="tF(this)">Open Late (10pm+)</div><div class="fopt" onclick="tF(this)">Breakfast</div></div></div>
-          <button class="apply-btn" onclick="go('home')">Show Results →</button>
-        </div>
+        <div class="ph"><div><div class="ph-title">Filter</div><div class="ph-sub">Changes here also update Discover.</div></div><button type="button" class="tt-link" id="filter-clear">Clear all</button></div>
+        <div class="tt-filter" id="filter-body"></div>
+        <div class="tt-filter-foot"><button type="button" class="tt-btn tt-btn--primary tt-btn--block" id="filter-apply">Show spots</button></div>
       </div>
 
       <!-- GROUP -->

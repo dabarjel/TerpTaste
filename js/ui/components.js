@@ -110,6 +110,11 @@ const UI = (() => {
     </div>`;
   }
 
+  // Toggle chip. f is an opaque filter key the page interprets, e.g. "diet:vegan".
+  function chip(label, { f, pressed = false, more = false } = {}) {
+    return `<button type="button" class="tt-chip${more ? ' tt-chip--more' : ''}" data-f="${esc(f)}"${more ? '' : ` aria-pressed="${!!pressed}"`}>${esc(label)}</button>`;
+  }
+
   // Insert HTML and bind any [data-action] buttons to the given handlers.
   function mount(el, html, handlers = {}) {
     el.innerHTML = html;
@@ -120,6 +125,6 @@ const UI = (() => {
   }
 
   return { esc, price, walkMinutes, walkLabel, miles, avatarColor, initials,
-    photoTile, openStatus, trustLine, card, setSaveButton,
+    photoTile, openStatus, trustLine, card, setSaveButton, chip,
     skeletonCards, emptyState, errorState, mount };
 })();

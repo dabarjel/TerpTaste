@@ -61,7 +61,7 @@ Done:
 ## Phase 3: Components
 Built in four groups, with a stop for review after each:
 1. ✅ Restaurant card, photo fallback, loading/empty/error states (`js/ui/components.js`, `css/components.css`)
-2. Search bar and filter chips, with the Filter panel actually filtering
+2. ✅ Search bar and filter chips, with the Filter panel actually filtering
 3. Detail view, check-in, Saved Spots
 4. Group Vote scoreboard and nav, with Saved in the mobile nav
 

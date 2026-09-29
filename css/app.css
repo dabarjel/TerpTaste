@@ -37,11 +37,6 @@ html,body{height:100%;font-family:var(--f-body);background:var(--bg-page);color:
 .loc-dot{width:6px;height:6px;border-radius:50%;background:var(--open-green);flex-shrink:0;}
 .surprise-btn{background:var(--terp-gold);color:var(--bg-page);border:none;border-radius:12px;padding:10px 20px;font-family:var(--f-body);font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;margin-top:4px;}
 .surprise-btn:active{transform:scale(0.97);}
-.chips{padding:14px 28px 10px;display:flex;gap:8px;overflow-x:auto;}
-.chips::-webkit-scrollbar{display:none;}
-.chip{background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:500;color:var(--text-secondary);white-space:nowrap;cursor:pointer;flex-shrink:0;font-family:var(--f-body);}
-.chip:hover{background:var(--surface-3);color:var(--text-primary);border-color:var(--border-strong);}
-.chip.active{background:var(--terp-red);color:var(--text-primary);border-color:var(--terp-red);}
 .slabel{padding:18px 28px 10px;font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;}
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--card-gap);padding:0 28px 8px;}
 .mrow{padding:0 28px 8px;display:flex;gap:var(--card-gap);overflow-x:auto;margin-bottom:6px;}
@@ -74,18 +69,6 @@ html,body{height:100%;font-family:var(--f-body);background:var(--bg-page);color:
 .abtn.saved-active{border-color:var(--terp-red);color:var(--terp-red);}
 .checkin-btn{background:var(--terp-red);color:var(--text-primary);border:none;border-radius:10px;padding:12px 24px;font-family:var(--f-body);font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;display:block;width:100%;}
 .checkin-btn.done{background:var(--status-done);}
-.fbody{padding:24px 28px;}
-.fgroup{margin-bottom:24px;}
-.fgtitle{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
-.fopts{display:flex;flex-wrap:wrap;gap:7px;}
-.fopt{background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-secondary);font-family:var(--f-body);}
-.fopt.sel{background:var(--surface-3);color:var(--text-primary);border-color:var(--border-strong);}
-.pgrid{display:grid;grid-template-columns:repeat(4,80px);gap:8px;}
-.popt{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;color:var(--text-secondary);font-family:var(--f-body);}
-.popt.sel{background:var(--surface-3);color:var(--terp-gold);border-color:var(--terp-gold-dim);}
-input[type=range]{width:100%;max-width:360px;accent-color:var(--terp-gold);margin:6px 0 4px;display:block;}
-.rlabels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);max-width:360px;}
-.apply-btn{background:var(--terp-red);color:var(--text-primary);border:none;border-radius:12px;padding:13px 32px;font-family:var(--f-body);font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
 .glayout{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px 28px;align-items:start;}
 .gtitle{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
 .mbrs{display:flex;margin-bottom:16px;}
@@ -164,11 +147,9 @@ input[type=range]{width:100%;max-width:360px;accent-color:var(--terp-gold);margi
   .mobile-nav{display:flex;flex-direction:column;}
   .ph{padding:14px 16px 12px;}
   .ph-title{font-size:20px;}
-  .chips{padding:10px 16px 8px;}
   .slabel{padding:14px 16px 8px;}
   .cgrid{grid-template-columns:1fr;padding:0 16px 8px;gap:10px;}
   .mrow{padding:0 16px;}
-  .fbody{padding:16px;}
   .glayout{grid-template-columns:1fr;padding:16px;}
   .fgrid{grid-template-columns:1fr;padding:0 16px 16px;}
   .saved-grid{grid-template-columns:1fr;padding:0 16px 16px;}
@@ -177,6 +158,5 @@ input[type=range]{width:100%;max-width:360px;accent-color:var(--terp-gold);margi
   .dbody{padding:16px;}
   .dcols{grid-template-columns:1fr;}
   .dname{font-size:22px;}
-  .pgrid{grid-template-columns:repeat(4,1fr);}
   .toast{bottom:90px;}
 }

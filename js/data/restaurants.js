@@ -104,6 +104,8 @@ const TerpData = (() => {
   //   openNow        boolean
   //   priceLevels    string[]  e.g. ['PRICE_LEVEL_INEXPENSIVE']
   //   studentTags    string[]  every tag must match, e.g. ['vegan','halal']
+  //   anyStudentTags string[]  at least one must match, e.g. ['fast','sitdown']
+  //   cuisines       string[]  primaryTypeDisplayName is one of these
   //   maxDistanceMiles number
   //   query          string    matches name, cuisine, menu
   //   savedOnly      boolean
@@ -118,6 +120,8 @@ const TerpData = (() => {
     if (f.openNow) list = list.filter(r => r.isOpenNow === true); // unknown hours never count as open
     if (f.priceLevels?.length) list = list.filter(r => f.priceLevels.includes(r.priceLevel));
     if (f.studentTags?.length) list = list.filter(r => f.studentTags.every(t => r.terp.studentTags.includes(t)));
+    if (f.anyStudentTags?.length) list = list.filter(r => f.anyStudentTags.some(t => r.terp.studentTags.includes(t)));
+    if (f.cuisines?.length) list = list.filter(r => f.cuisines.includes(r.primaryTypeDisplayName));
     if (f.maxDistanceMiles != null) list = list.filter(r => r.distanceMiles != null && r.distanceMiles <= f.maxDistanceMiles);
     if (f.savedOnly) list = list.filter(r => r.terp.saved);
     if (f.query) {

@@ -79,45 +79,159 @@ function go(id) {
       });
     });
   });
-  if(id==='home') renderHome(activeChip);
+  if(id==='home') renderHome();
+  if(id==='filter') renderFilterPanel();
   if(id==='saved') renderSaved();
   if(id==='profile') renderProfile();
   if(id==='group') renderGroup();
 }
 
+// ── FILTERS (one state shared by Home search, Home chips and the Filter panel) ──
+const INEXPENSIVE = 'PRICE_LEVEL_INEXPENSIVE';
+const PLACE_TYPES = [ ['fast','Fast food'], ['sitdown','Sit-down'], ['cafe','Café'] ];
+const DIETS = [ ['vegan','Vegan'], ['halal','Halal'] ];            // only tags the data actually carries
+const WALKS = [5, 10, 20];                                          // minutes from campus
+const filters = { query:'', cuisines:new Set(), places:new Set(), prices:new Set(), diet:new Set(), maxWalk:null, openNow:false, late:false };
+let facets = { hasHours:false, cuisines:[], priceLevels:[], studentTags:[] };
+
+const activeFilterCount = () =>
+  filters.cuisines.size + filters.places.size + filters.prices.size + filters.diet.size +
+  (filters.maxWalk ? 1 : 0) + (filters.openNow ? 1 : 0) + (filters.late ? 1 : 0);
+const hasActiveFilters = () => activeFilterCount() > 0 || !!filters.query.trim();
+
+function filterQuery(){
+  const q = { sort:'distance' };
+  if(filters.query.trim()) q.query = filters.query.trim();
+  if(filters.cuisines.size) q.cuisines = [...filters.cuisines];
+  if(filters.places.size) q.anyStudentTags = [...filters.places];
+  if(filters.prices.size) q.priceLevels = [...filters.prices];
+  const all = [...filters.diet, ...(filters.late ? ['late'] : [])];
+  if(all.length) q.studentTags = all;
+  if(filters.maxWalk) q.maxDistanceMiles = filters.maxWalk / 20;
+  if(filters.openNow && facets.hasHours) q.openNow = true;
+  return q;
+}
+
+// Keys look like "kind:value"; one handler serves chips on Home and in the Filter panel.
+function toggleFilter(key){
+  const [kind, value] = [key.slice(0, key.indexOf(':')), key.slice(key.indexOf(':')+1)];
+  const flip = set => set.has(value) ? set.delete(value) : set.add(value);
+  if(kind==='cuisine') flip(filters.cuisines);
+  else if(kind==='place') flip(filters.places);
+  else if(kind==='price') flip(filters.prices);
+  else if(kind==='diet') flip(filters.diet);
+  else if(kind==='walk') filters.maxWalk = (value==='any' || Number(value)===filters.maxWalk) ? null : Number(value);
+  else if(kind==='open') filters.openNow = !filters.openNow;
+  else if(kind==='late') filters.late = !filters.late;
+  filtersChanged();
+}
+function clearAllFilters({ keepQuery = false } = {}){
+  ['cuisines','places','prices','diet'].forEach(k=>filters[k].clear());
+  filters.maxWalk = null; filters.openNow = false; filters.late = false;
+  if(!keepQuery){ filters.query = ''; document.getElementById('home-search').value = ''; }
+  filtersChanged();
+}
+function filtersChanged(){
+  renderChips();
+  renderFilterPanel();
+  if(document.getElementById('panel-home').classList.contains('active')) renderHome();
+}
+
+// Re-rendering replaces the buttons, so keep keyboard focus on the same chip.
+function renderKeepingFocus(el, html){
+  const f = document.activeElement && el.contains(document.activeElement) ? document.activeElement.dataset.f : null;
+  el.innerHTML = html;
+  if(f) el.querySelector(`[data-f="${CSS.escape(f)}"]`)?.focus();
+}
+
+// Quick chips on Home, plus a chip for anything set only in the Filter panel so every
+// active filter is visible (and removable) from Home.
+function renderChips(){
+  const n = activeFilterCount();
+  const c = [UI.chip(n ? `All filters (${n})` : 'All filters', { f:'nav:filter', more:true })];
+  if(facets.hasHours) c.push(UI.chip('Open now', { f:'open:', pressed:filters.openNow }));
+  c.push(UI.chip('Under $15', { f:`price:${INEXPENSIVE}`, pressed:filters.prices.has(INEXPENSIVE) }));
+  c.push(UI.chip(filters.maxWalk && filters.maxWalk!==10 ? `${filters.maxWalk} min walk` : '10 min walk', { f:`walk:${filters.maxWalk || 10}`, pressed:!!filters.maxWalk }));
+  [...filters.cuisines].forEach(cu=>c.push(UI.chip(cu, { f:`cuisine:${cu}`, pressed:true })));
+  [...filters.prices].filter(p=>p!==INEXPENSIVE).forEach(p=>c.push(UI.chip(UI.price({priceLevel:p}), { f:`price:${p}`, pressed:true })));
+  DIETS.forEach(([t,l])=>c.push(UI.chip(l, { f:`diet:${t}`, pressed:filters.diet.has(t) })));
+  c.push(UI.chip('Open late', { f:'late:', pressed:filters.late }));
+  PLACE_TYPES.forEach(([t,l])=>c.push(UI.chip(l, { f:`place:${t}`, pressed:filters.places.has(t) })));
+  // Active chips first, so they stay on screen when the row scrolls on phones.
+  const [more, ...rest] = c;
+  const isOn = h => h.includes('aria-pressed="true"');
+  renderKeepingFocus(document.getElementById('home-chips'), [more, ...rest.filter(isOn), ...rest.filter(h=>!isOn(h))].join(''));
+}
+
+// ── FILTER PANEL ──────────────────────────────────────────────────────────────
+function renderFilterPanel(){
+  const group = (title, chips, hint='') => chips.length ? `<section class="tt-fgroup">
+      <h3 class="tt-fgroup-title">${UI.esc(title)}</h3>${hint ? `<p class="tt-fhint">${UI.esc(hint)}</p>` : ''}
+      <div class="tt-fopts">${chips.join('')}</div></section>` : '';
+  const hasTag = t => facets.studentTags.includes(t);
+  const q = filters.query.trim();
+  const html = (q ? `<p class="tt-fnote">Also searching for “${UI.esc(q)}”. Clear the search on Discover to see more.</p>` : '') + [
+    group('Walk time from campus', [
+      UI.chip('Any distance', { f:'walk:any', pressed:!filters.maxWalk }),
+      ...WALKS.map(m=>UI.chip(`${m} min`, { f:`walk:${m}`, pressed:filters.maxWalk===m })),
+    ]),
+    group('Price', facets.priceLevels.map(p=>UI.chip(UI.price({priceLevel:p}), { f:`price:${p}`, pressed:filters.prices.has(p) })),
+      '$ spots are usually under $15 a person.'),
+    group('Type of place', PLACE_TYPES.filter(([t])=>hasTag(t)).map(([t,l])=>UI.chip(l, { f:`place:${t}`, pressed:filters.places.has(t) }))),
+    group('Cuisine', facets.cuisines.map(cu=>UI.chip(cu, { f:`cuisine:${cu}`, pressed:filters.cuisines.has(cu) }))),
+    group('Dietary', DIETS.filter(([t])=>hasTag(t)).map(([t,l])=>UI.chip(l, { f:`diet:${t}`, pressed:filters.diet.has(t) }))),
+    group('Hours', [
+      ...(facets.hasHours ? [UI.chip('Open now', { f:'open:', pressed:filters.openNow })] : []),
+      ...(hasTag('late') ? [UI.chip('Open late', { f:'late:', pressed:filters.late })] : []),
+    ], 'Open late is reported by students.'),
+  ].join('');
+  renderKeepingFocus(document.getElementById('filter-body'), html);
+  updateApplyCount();
+}
+
+let countReq = 0;
+function updateApplyCount(){
+  const req = ++countReq;
+  const btn = document.getElementById('filter-apply');
+  TerpData.getRestaurants(filterQuery()).then(list=>{
+    if(req!==countReq) return;
+    btn.disabled = list.length===0;
+    btn.textContent = list.length===0 ? 'No spots match' : `Show ${list.length} ${list.length===1?'spot':'spots'}`;
+  }).catch(()=>{ if(req===countReq){ btn.disabled = false; btn.textContent = 'Show spots'; } });
+}
+
 // ── HOME ──────────────────────────────────────────────────────────────────────
-const CHIP_FILTERS = {
-  all:     {},
-  open:    { openNow:true },
-  budget:  { priceLevels:['PRICE_LEVEL_INEXPENSIVE'] },
-  fast:    { studentTags:['fast'] },
-  sitdown: { studentTags:['sitdown'] },
-  cafe:    { studentTags:['cafe'] },
-  vegan:   { studentTags:['vegan'] },
-  halal:   { studentTags:['halal'] },
-};
 let homeReq = 0;
-function renderHome(filter) {
+function renderHome() {
   const req = ++homeReq;
   const el = document.getElementById('home-content');
-  return withLoading(el, TerpData.getRestaurants(CHIP_FILTERS[filter] || {}), list=>{
-    if(req!==homeReq) return; // a newer chip click won
+  const active = hasActiveFilters();
+  return withLoading(el, TerpData.getRestaurants(active ? filterQuery() : {}), list=>{
+    if(req!==homeReq) return; // a newer search or filter change won
+    const q = filters.query.trim();
     if(!list.length){
-      const noHours = filter==='open';
       UI.mount(el, `<div class="tt-gutter">${UI.emptyState({
-        title: noHours ? 'No opening hours yet' : 'No spots match',
-        body: noHours ? 'TerpTaste doesn’t have opening hours for these spots yet, so it can’t tell which are open right now.'
-                      : 'Nothing nearby matches this filter yet.',
-        action: { label:'Show all spots', name:'all' },
-      })}</div>`, { all: ()=>filterChip(document.querySelector('#home-chips .chip'), 'all') });
+        title: 'No spots match',
+        body: q ? `Nothing matches “${q}”${activeFilterCount() ? ' with these filters' : ''}. Try a different word or clear filters.`
+                : 'Nothing nearby matches these filters. Remove one to see more.',
+        action: { label:'Clear filters', name:'clear' },
+      })}</div>`, { clear: ()=>clearAllFilters() });
       return;
     }
-    // Section layout stays until Phase 4 replaces it with walk-time sections.
+    const grid = rs => `<div class="cgrid">${rs.map(r=>UI.card(r)).join('')}</div>`;
+    if(active){
+      // One list, nearest first, each spot once.
+      UI.mount(el, `<div class="tt-results-head">
+          <span class="tt-results-count">${list.length} ${list.length===1?'spot':'spots'}${q ? ` for “${UI.esc(q)}”` : ''}</span>
+          <button type="button" class="tt-link" data-action="clear">Clear filters</button>
+        </div>${grid(list)}<div style="height:20px;"></div>`, { clear: ()=>clearAllFilters() });
+      return;
+    }
+    // No filters: section layout stays until Phase 4 replaces it with walk-time sections.
     const forYou = list.slice(0,3);
     const budget = list.filter(r=>r.priceLevel==='PRICE_LEVEL_INEXPENSIVE').slice(0,6);
     const more = list.slice(3, list.length>6?9:list.length);
     const worth = list.filter(r=>r.distanceMiles>1).slice(0,4);
-    const grid = rs => `<div class="cgrid">${rs.map(r=>UI.card(r)).join('')}</div>`;
 
     let h = '';
     h += `<div class="slabel">For You — based on your preferences</div>${grid(forYou)}`;
@@ -126,16 +240,25 @@ function renderHome(filter) {
     if(worth.length) h += `<div class="slabel">Worth the trip</div>${grid(worth)}`;
     h += `<div style="height:20px;"></div>`;
     el.innerHTML = h;
-  }, ()=>renderHome(filter));
+  }, ()=>{ loadFacets(); renderHome(); });
 }
 
-let activeChip = 'all';
-function filterChip(el, val) {
-  document.querySelectorAll('#home-chips .chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  activeChip = val;
-  renderHome(val);
-}
+// Search: filter as you type (debounced), Enter or Escape handled by the native search field.
+let searchTimer;
+document.getElementById('home-search').addEventListener('input', e=>{
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(()=>{ filters.query = e.target.value; renderHome(); }, 150);
+});
+
+// Chip clicks, wherever the chip lives.
+document.addEventListener('click', e=>{
+  const chip = e.target.closest('[data-f]');
+  if(!chip) return;
+  if(chip.dataset.f==='nav:filter'){ go('filter'); return; }
+  toggleFilter(chip.dataset.f);
+});
+document.getElementById('filter-clear').addEventListener('click', ()=>clearAllFilters({ keepQuery:true }));
+document.getElementById('filter-apply').addEventListener('click', ()=>go('home'));
 
 // ── DETAIL ────────────────────────────────────────────────────────────────────
 let detailReq = 0;
@@ -296,11 +419,6 @@ function surpriseMe(){
     .catch(err=>{ console.error(err); showToast('Restaurants didn’t load. Try again.'); });
 }
 
-// ── FILTER HELPERS ────────────────────────────────────────────────────────────
-function tF(el){el.classList.toggle('sel');}
-function tP(el){el.classList.toggle('sel');}
-function clearFilters(){document.querySelectorAll('.fopt,.popt').forEach(o=>o.classList.remove('sel'));}
-
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 let tTimer;
 function showToast(msg){
@@ -309,11 +427,16 @@ function showToast(msg){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-// "Open now" controls stay hidden until the data has real hours for at least one spot.
-function applyFacets(){
-  TerpData.getFacets().then(f=>{
-    document.querySelectorAll('[data-needs-hours]').forEach(el=>{ el.hidden = !f.hasHours; });
+// Filter options come from the data. "Open now" only appears once some spot has real hours,
+// so it comes back on its own when Google Places supplies them.
+function loadFacets(){
+  return TerpData.getFacets().then(f=>{
+    facets = f;
+    if(!f.hasHours) filters.openNow = false;
+    renderChips();
+    renderFilterPanel();
   }).catch(err=>console.error(err));
 }
-applyFacets();
-renderHome('all');
+renderChips();
+loadFacets();
+renderHome();
