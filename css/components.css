@@ -11,6 +11,7 @@
 .tt-card-link:focus-visible{outline:none;}
 .tt-card:has(.tt-card-link:focus-visible){outline:2px solid var(--focus-ring);outline-offset:2px;}
 .tt-card:hover .tt-tile-word{color:var(--tile-word-hover);}
+.tt-tile-word::before{content:attr(data-word);}
 
 .tt-card--compact{width:200px;flex-shrink:0;}
 .tt-card--compact .tt-tile{height:88px;}

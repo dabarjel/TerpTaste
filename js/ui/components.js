@@ -29,12 +29,14 @@ const UI = (() => {
   const initials = name => name.replace(/[^A-Za-z ]/g, '').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   // Photo when the data has one; otherwise the cuisine name set large and cropped.
+  // The word is drawn by CSS (content: attr(data-word)): it is pure decoration, so it is
+  // neither read out nor measured as text.
   // A photo that fails to load removes itself and the type tile shows through.
   function photoTile(r) {
     const photo = r.photos && r.photos[0] && r.photos[0].url;
     const word = r.primaryTypeDisplayName || r.name;
     return `<div class="tt-tile">
-      <span class="tt-tile-word" aria-hidden="true">${esc(word)}</span>
+      <span class="tt-tile-word" data-word="${esc(word)}" aria-hidden="true"></span>
       ${photo ? `<img class="tt-tile-img" src="${esc(photo)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
     </div>`;
   }

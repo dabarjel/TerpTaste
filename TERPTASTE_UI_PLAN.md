@@ -139,7 +139,17 @@ Original checklist:
 - Motion: subtle hover and transition effects, and respect `prefers-reduced-motion`.
 - Performance: lazy-load images, preload fonts, no unused CSS.
 
-## Phase 6: Verify
+## Phase 6: Verify ✅
+Results (2026-09-29):
+1. **Breakpoints:** no horizontal scroll on Discover, Filter, Crew, Deals, Saved, Profile and a detail page at 320, 375, 768, 1280 and 1600px.
+2. **Features:** browser suites for filters and search, detail with Back/Undo, Saved, group vote (including Leading → Final → new vote), deals (`?today=mon`), Crew and reviews ("I went here"), Phase 4 Discover, and accessibility behavior all pass. Data suites (data layer, persistence including older stored check-ins, deals, friends and reviews) pass.
+3. **Loading and error states:** with `?delay=900`, Discover, Deals, Crew, Saved and detail show skeletons, then content. With `?fail=1`, each shows its error state (Today's deals hides), and Try again recovers on detail and Deals.
+4. **Console:** no errors in any suite (the only errors logged are the deliberate `?fail=1` ones). Lighthouse "errors in console" passes after adding a favicon.
+5. **Lighthouse** (Edge headless, local server): mobile performance 97, accessibility 100, best practices 100, SEO 100 (FCP 2.0s, LCP 2.1s, TBT 0ms, CLS 0.016); desktop 100 / 100 / 100 / 100 (FCP 0.5s, LCP 0.7s). **axe-core** reports no WCAG 2.1 A/AA violations on any of 10 screens and states (Discover, Filter, Crew, Deals, Saved, Profile, detail, review form with an error, empty search, toast).
+   - Fixes made during verification: fonts load without blocking first paint; favicon and meta description added; decorative cuisine words drawn by CSS so they aren't measured as text; avatar colors darkened (and sidebar/Profile avatar text lightened) to 4.5:1; Profile "Dietary preferences" heading renamed "Your preferences" since the tags aren't dietary.
+6. **Left undone:** see "Not in this round" below, plus: a manual screen reader and keyboard-only pass; Profile's Friends (12) and Groups (4) stats are still static placeholders until accounts exist; the case-study page wasn't restyled.
+
+Original checklist:
 1. Test every page at the breakpoints above.
 2. Confirm Saved Spots, check-ins, and group voting all still work.
 3. Flip the fake delay on and confirm loading skeletons show. Force an error and confirm the error state shows.

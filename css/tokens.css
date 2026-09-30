@@ -21,13 +21,13 @@
   --gold:#FFD200;         /* ratings and the vote leader only */
   --open:#3FC47F;         /* open-now status only */
 
-  /* Avatar fills (initials on white text) */
-  --avatar-red:#E03A3E;
-  --avatar-blue:#3D7EBF;
-  --avatar-green:#2A9D60;
+  /* Avatar fills: each keeps 4.5:1+ with --on-red initials */
+  --avatar-red:#D3373A;
+  --avatar-blue:#3977B4;
+  --avatar-green:#238350;
   --avatar-purple:#9B59B6;
-  --avatar-orange:#E67E22;
-  --avatar-teal:#1ABC9C;
+  --avatar-orange:#AF601A;
+  --avatar-teal:#12826C;
 
   /* ── Semantic color ───────────────────────────────────────────────── */
   --bg-page:var(--asphalt);
