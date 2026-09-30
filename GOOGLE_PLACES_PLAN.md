@@ -30,7 +30,9 @@ Walk me through these, but I'll do them by hand:
 3. One endpoint, `/places`, that runs Nearby Search (New) around UMD.
    - Nearby Search returns a max of 20 results with no pagination, so run a few searches (campus, Route 1, downtown College Park) and merge them, removing duplicates by `place_id`.
    - Restaurant-type places only.
-4. Keep the field mask minimal. Only request fields the app actually shows: id, name, address, location, rating, rating count, price level, types, opening hours, photos. Check the docs for which billing tier each field lands in and tell me the tier before I approve.
+4. Keep the field mask minimal. Only request fields the app actually shows: `places.id`, `places.displayName`, `places.shortFormattedAddress`, `places.location`, `places.rating`, `places.userRatingCount`, `places.priceLevel`, `places.types`, `places.primaryTypeDisplayName`, `places.currentOpeningHours`, `places.photos`.
+   - `shortFormattedAddress` is the address on cards. `currentOpeningHours` is the hours source, returned as `openingHours` (see `DATA.md`).
+   - Before building, check the docs for which billing tier each field lands in, confirm what `primaryTypeDisplayName`, `shortFormattedAddress` and `currentOpeningHours` do to the tier, and tell me the tier before I approve.
 5. CORS: only allow requests from dabarjel.github.io.
 6. Add basic rate limiting so one user can't burn the quota.
 7. Return data normalized to the mock-places format (see `DATA.md`).

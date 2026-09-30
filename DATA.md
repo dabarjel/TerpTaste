@@ -17,15 +17,15 @@ This is the shape `fetchPlaces()` resolves to: an array of these. Today it's `MO
 |---|---|---|---|
 | `id` | string | `id` (place_id) | The only field that may be stored. Mock ids are short slugs until Step 4 re-keys them. |
 | `name` | string | `displayName.text` | |
-| `address` | string \| null | an address field (which one is decided in Step 1) | |
+| `address` | string \| null | `shortFormattedAddress` | Short address shown on cards. |
 | `location` | `{lat, lng}` \| null | `location` (`latitude`/`longitude`) | Drives distance. `null` in mock data. |
 | `rating` | number \| null | `rating` | |
 | `userRatingCount` | number \| null | `userRatingCount` | |
 | `priceLevel` | string \| null | `priceLevel` | `PRICE_LEVEL_INEXPENSIVE` … `PRICE_LEVEL_VERY_EXPENSIVE`. |
 | `types` | string[] | `types` | |
-| `primaryTypeDisplayName` | string \| null | `primaryTypeDisplayName.text` | Cuisine label, filters and photo-fallback word. **Not yet in the Step 1 field mask.** |
+| `primaryTypeDisplayName` | string \| null | `primaryTypeDisplayName.text` | Cuisine label, filters and photo-fallback word. |
 | `photos` | array | `photos` | Empty in mock data. The UI reads `photos[0].url`, which Step 2's `/photo` endpoint supplies. `authorAttributions` must be shown with any photo. |
-| `openingHours` | object \| null | an opening-hours field (decided in Step 1) | The data layer reads `openingHours.openNow`. |
+| `openingHours` | object \| null | `currentOpeningHours` | Renamed to `openingHours` by the Worker. The data layer reads `openingHours.openNow`. |
 | `isOpenNow` | boolean \| null | derived | Mock-only fallback; the data layer prefers `openingHours.openNow`. |
 | `_mockDistanceMiles` | number | none | Mock only. Stripped by the data layer and ignored once `location` exists. The Worker never sends it. |
 
