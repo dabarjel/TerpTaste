@@ -1,6 +1,6 @@
 # TerpTaste handoff
 
-Last updated 2026-09-30. Read this first in a new session. Then read `TERPTASTE_UI_PLAN.md` (the full history and future notes) before changing anything.
+Last updated 2026-09-30. Read this first in a new session. Then read `GOOGLE_PLACES_PLAN.md` (the current work, see "Next up") and `TERPTASTE_UI_PLAN.md` (the full history and future notes) before changing anything.
 
 ## What TerpTaste is
 
@@ -11,7 +11,7 @@ It's a static site (vanilla HTML, CSS and JS, no framework, no build step) hoste
 ## Current state
 
 - **`main`** has the whole UI overhaul (Phases 0–6), merged through PR #1 (`28d91bc`).
-- **This file and the `tests/` folder** are on the `handoff` branch, which needs its own PR into `main`. Once that's merged, work from `main` (or a new branch off it).
+- **This file, `GOOGLE_PLACES_PLAN.md` and the `tests/` folder** are on the `handoff` branch, which needs its own PR into `main`. Once that's merged, work from `main`. Phase 7 itself goes on a new `google-places` branch, per its plan.
 - **Local `main` may be behind** `origin/main`. Run `git checkout main && git pull` before starting.
 - **Nothing is uncommitted or unpushed** apart from what the `handoff` branch PR brings in.
 
@@ -31,7 +31,8 @@ It's a static site (vanilla HTML, CSS and JS, no framework, no build step) hoste
 | `js/app.js` | Screens, navigation, shared filter state, events, toast, focus management. |
 | `styleguide.html` | Living styleguide showing the tokens and the real components with mock data. |
 | `case-study.html`, `css/case-study.css`, `js/case-study.js` | Separate UX case-study page (portfolio). Not part of the app and not restyled. |
-| `TERPTASTE_UI_PLAN.md` | The plan: chosen direction, every phase with what was done, and the future notes (Google Places proxy, Google Maps, accounts, admin for deals and dishes, review incentives). |
+| `GOOGLE_PLACES_PLAN.md` | **The current plan (Phase 7):** real restaurants and photos from Google Places (New) through a Cloudflare Worker, in Steps 0–6. Also sets the ground rules for this phase (no key in the repo, no storing Google data). |
+| `TERPTASTE_UI_PLAN.md` | The UI overhaul plan: chosen direction, every phase (0–6) with what was done, and the future notes (Google Places proxy, Google Maps, accounts, admin for deals and dishes, review incentives). |
 | `UX_REVIEW.md` | The original UX heuristics review (10 heuristics plus priority actions). |
 | `AUDIT_PHASE5.md` | Accessibility (WCAG 2.1 A/AA) and craft audits, with findings, measured contrast and fixes. |
 | `tests/` | Data tests, browser tests and tools (see below). |
@@ -104,12 +105,14 @@ powershell -ExecutionPolicy Bypass -File tests\run-browser.ps1 -Only deals
 
 ## Next up: `GOOGLE_PLACES_PLAN.md`
 
-That file doesn't exist yet. Writing it is the next task, from the future notes at the end of `TERPTASTE_UI_PLAN.md`:
+The plan already exists in the repo root. **Read `GOOGLE_PLACES_PLAN.md` in full, then start with Step 0.**
 
-- a backend proxy (for example a Cloudflare Worker or Vercel function) that holds the Places key
-- mapping Places responses to the existing record shape so only `fetchPlaces()` changes
-- photos with attributions
-- the Google Maps view behind the Discover List / Map toggle, which must be a Google Map, with a referrer-restricted Maps key
-- loading and error handling for quota and key failures
-
-Write the plan first and stop for review before building.
+- **Step 0 is setup the owner does by hand:** a Google Cloud project with billing, Places API (New), a key restricted to it, quota caps and a budget alert, a Cloudflare account with Wrangler, and the key stored as a Worker secret.
+  - Walk the owner through each item; don't do them for them.
+  - Never ask for the key, and never put it in the repo or a commit.
+- **After Step 0, work one step at a time** (Worker, photos, data layer swap, re-keying content, Google requirements, verify) on a new `google-places` branch. Commit at the end of each step and stop for review.
+- **The plan's ground rules add to the working style above:**
+  - Don't store or cache Google's data beyond the session (only `place_id` may be stored).
+  - Report the field-mask billing tier before it's approved.
+  - Quota or Worker failures must fall back to the error state.
+- The Map view stays out of this phase. It's listed under "Later" in the plan.
