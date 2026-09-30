@@ -6,12 +6,14 @@
 <title>TerpTaste — UMD Food Discovery</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
+<a class="tt-skip" href="#main">Skip to content</a>
 <div class="tt-toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button type="button" class="tt-toast-action" id="toast-action" hidden></button></div>
 <div class="app-shell">
 
@@ -20,27 +22,27 @@
     <div class="sidebar-logo">Terp<span>Taste</span></div>
     <nav class="sidebar-nav" aria-label="Main">
     <button type="button" class="snav" id="sb-home" data-nav="home">
-      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H14v-5H8v5H4a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H14v-5H8v5H4a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>Home</span>
     </button>
     <button type="button" class="snav" id="sb-filter" data-nav="filter">
-      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 5h16M6 11h10M9 17h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 5h16M6 11h10M9 17h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span>Filter</span>
     </button>
     <button type="button" class="snav" id="sb-crew" data-nav="crew">
-      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span>Crew</span>
     </button>
     <button type="button" class="snav" id="sb-deals" data-nav="deals">
-      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 11.2V4a1 1 0 011-1h7.2a1 1 0 01.7.3l7 7a1 1 0 010 1.4l-7.2 7.2a1 1 0 01-1.4 0l-7-7a1 1 0 01-.3-.7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+      <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 11.2V4a1 1 0 011-1h7.2a1 1 0 01.7.3l7 7a1 1 0 010 1.4l-7.2 7.2a1 1 0 01-1.4 0l-7-7a1 1 0 01-.3-.7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
       <span>Deals</span>
     </button>
     <button type="button" class="snav" id="sb-saved" data-nav="saved">
-      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 17.5l-7-5.5a4 4 0 015.6-5.6L11 8l1.4-1.6A4 4 0 0118 12l-7 5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 17.5l-7-5.5a4 4 0 015.6-5.6L11 8l1.4-1.6A4 4 0 0118 12l-7 5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>Saved</span>
     </button>
     <button type="button" class="snav" id="sb-profile" data-nav="profile">
-      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 19c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 19c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span>Profile</span>
     </button>
     </nav>
@@ -51,13 +53,13 @@
   </div>
 
   <div class="main-area">
-    <div class="main-scroll" id="main-scroll">
+    <main class="main-scroll" id="main" tabindex="-1">
 
       <!-- HOME -->
       <div class="panel active" id="panel-home">
         <div class="ph tt-disc-head">
           <div>
-            <h1 class="ph-title">Discover</h1>
+            <h1 class="ph-title" tabindex="-1">Discover</h1>
             <div class="ph-sub">Near UMD College Park. Walk times are from McKeldin Mall.</div>
           </div>
           <div class="tt-disc-actions">
@@ -80,7 +82,7 @@
           </label>
           <div class="tt-chips" id="home-chips" role="group" aria-label="Quick filters"></div>
         </div>
-        <div id="home-content" aria-live="polite"></div>
+        <div id="home-content"></div>
       </div>
 
       <!-- DETAIL -->
@@ -88,7 +90,7 @@
 
       <!-- FILTER -->
       <div class="panel" id="panel-filter">
-        <div class="ph"><div><div class="ph-title">Filter</div><div class="ph-sub">Changes here also update Discover.</div></div><button type="button" class="tt-link" id="filter-clear">Clear all</button></div>
+        <div class="ph"><div><h1 class="ph-title" tabindex="-1">Filter</h1><div class="ph-sub">Changes here also update Discover.</div></div><button type="button" class="tt-link" id="filter-clear">Clear all</button></div>
         <div class="tt-filter" id="filter-body"></div>
         <div class="tt-filter-foot"><button type="button" class="tt-btn tt-btn--primary tt-btn--block" id="filter-apply">Show spots</button></div>
       </div>
@@ -96,7 +98,7 @@
       <!-- GROUP -->
       <!-- CREW: friend activity + group vote -->
       <div class="panel" id="panel-crew">
-        <div class="ph"><div><div class="ph-title">Crew</div><div class="ph-sub">Where your friends have been, and where you’re all going next.</div></div></div>
+        <div class="ph"><div><h1 class="ph-title" tabindex="-1">Crew</h1><div class="ph-sub">Where your friends have been, and where you’re all going next.</div></div></div>
         <section class="tt-crew-section" aria-labelledby="crew-activity-title">
           <div class="tt-section-head"><h2 class="tt-section-title" id="crew-activity-title">Friend activity</h2></div>
           <div id="crew-activity"></div>
@@ -104,7 +106,7 @@
         <section class="tt-crew-section" id="crew-vote" aria-labelledby="crew-vote-title">
           <div class="tt-section-head"><h2 class="tt-section-title" id="crew-vote-title">Group vote</h2><p class="tt-section-sub">Everyone taps their pick. The result is final once everyone has voted.</p></div>
           <div class="tt-group">
-          <div id="vote-board" aria-live="polite"></div>
+          <div id="vote-board"></div>
           <div class="tt-group-side">
             <section class="tt-picker" aria-labelledby="picker-title">
               <h2 class="tt-fgroup-title" id="picker-title">Add spots to the vote</h2>
@@ -123,19 +125,19 @@
 
       <!-- DEALS -->
       <div class="panel" id="panel-deals">
-        <div class="ph"><div><div class="ph-title">Deals</div><div class="ph-sub">Weekly deals near campus, today first. Check the date before you go.</div></div></div>
+        <div class="ph"><div><h1 class="ph-title" tabindex="-1">Deals</h1><div class="ph-sub">Weekly deals near campus, today first. Check the date before you go.</div></div></div>
         <div id="deals-content"></div>
       </div>
 
       <!-- SAVED -->
       <div class="panel" id="panel-saved">
-        <div class="ph"><div><div class="ph-title">Saved Spots</div><div class="ph-sub" id="saved-sub">Your shortlist</div></div></div>
+        <div class="ph"><div><h1 class="ph-title" tabindex="-1">Saved spots</h1><div class="ph-sub" id="saved-sub">Your shortlist</div></div></div>
         <div id="saved-content"></div>
       </div>
 
       <!-- PROFILE -->
       <div class="panel" id="panel-profile">
-        <div class="ph"><div class="ph-title">Profile</div></div>
+        <div class="ph"><h1 class="ph-title" tabindex="-1">Profile</h1></div>
         <div class="playout">
           <div>
             <div class="pcard">
@@ -149,35 +151,35 @@
                 <div class="scard"><div class="snum">4</div><div class="slbl">Groups</div></div>
               </div>
             </div>
-            <div class="psec" style="margin-top:12px;">
+            <div class="psec">
               <div class="ptitle">Dietary preferences</div>
               <div class="ptags"><div class="ptag">Asian</div><div class="ptag">Under $15</div><div class="ptag">Quick eats</div><div class="ptag">Vegan options</div><div class="ptag">Open late</div></div>
             </div>
-            <div class="psec" style="margin-top:12px;">
+            <div class="psec">
               <div class="ptitle">About this project</div>
-              <a class="abtn" href="case-study.html" style="text-decoration:none;display:inline-block;">Read the UX case study →</a>
+              <a class="abtn" href="case-study.html">Read the UX case study</a>
             </div>
           </div>
           <div>
             <div class="psec">
               <div class="ptitle">Visit history</div>
-              <div id="visit-history"><div style="font-size:13px;color:var(--text-muted);padding:8px 0;">No visits yet — check in after eating!</div></div>
+              <div id="visit-history"><p class="tt-muted-line">No visits yet. Tap “I went here” on a spot after you eat there.</p></div>
             </div>
           </div>
         </div>
       </div>
 
-    </div>
+    </main>
 
     <!-- MOBILE NAV -->
     <nav class="mobile-nav" aria-label="Main">
       <div class="mobile-nav-inner">
-        <button type="button" class="nitem" id="mn-home" data-nav="home"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H14v-5H8v5H4a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nlabel">Home</span></button>
-        <button type="button" class="nitem" id="mn-filter" data-nav="filter"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 5h16M6 11h10M9 17h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Filter</span></button>
-        <button type="button" class="nitem" id="mn-crew" data-nav="crew"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Crew</span></button>
-        <button type="button" class="nitem" id="mn-deals" data-nav="deals"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 11.2V4a1 1 0 011-1h7.2a1 1 0 01.7.3l7 7a1 1 0 010 1.4l-7.2 7.2a1 1 0 01-1.4 0l-7-7a1 1 0 01-.3-.7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg><span class="nlabel">Deals</span></button>
-        <button type="button" class="nitem" id="mn-saved" data-nav="saved"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 17.5l-7-5.5a4 4 0 015.6-5.6L11 8l1.4-1.6A4 4 0 0118 12l-7 5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nlabel">Saved</span></button>
-        <button type="button" class="nitem" id="mn-profile" data-nav="profile"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 19c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Profile</span></button>
+        <button type="button" class="nitem" id="mn-home" data-nav="home"><svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H14v-5H8v5H4a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nlabel">Home</span></button>
+        <button type="button" class="nitem" id="mn-filter" data-nav="filter"><svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 5h16M6 11h10M9 17h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Filter</span></button>
+        <button type="button" class="nitem" id="mn-crew" data-nav="crew"><svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Crew</span></button>
+        <button type="button" class="nitem" id="mn-deals" data-nav="deals"><svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 11.2V4a1 1 0 011-1h7.2a1 1 0 01.7.3l7 7a1 1 0 010 1.4l-7.2 7.2a1 1 0 01-1.4 0l-7-7a1 1 0 01-.3-.7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg><span class="nlabel">Deals</span></button>
+        <button type="button" class="nitem" id="mn-saved" data-nav="saved"><svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 17.5l-7-5.5a4 4 0 015.6-5.6L11 8l1.4-1.6A4 4 0 0118 12l-7 5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nlabel">Saved</span></button>
+        <button type="button" class="nitem" id="mn-profile" data-nav="profile"><svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 19c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Profile</span></button>
       </div>
     </nav>
   </div>

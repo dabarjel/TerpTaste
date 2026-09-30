@@ -124,8 +124,8 @@ const UI = (() => {
         <label class="tt-field"><span class="tt-field-hint">${options.length ? 'Or type it' : 'Type what you got'}</span><input type="text" name="got" maxlength="60" autocomplete="off" value="${esc(mine?.got || '')}"></label>
       </fieldset>
       <label class="tt-field"><span class="tt-field-label">One line <span class="tt-field-hint">(optional)</span></span><input type="text" name="note" maxlength="140" autocomplete="off" value="${esc(mine?.note || '')}"></label>
-      <p class="tt-form-error" role="alert" hidden></p>
-      <div class="tt-form-actions"><button type="submit" class="tt-btn tt-btn--primary">${mine ? 'Update review' : 'Post review'}</button><button type="button" class="tt-btn" data-action="cancel-review">Cancel</button></div>
+      <p class="tt-form-error" id="review-error" role="alert" hidden></p>
+      <div class="tt-form-actions"><button type="submit" class="tt-btn tt-btn--primary">${mine ? 'Update review' : 'Post review'}</button><button type="button" class="tt-btn" data-action="cancel-review">Cancel</button>${mine ? '<button type="button" class="tt-link tt-form-remove" data-action="remove-review">Remove review</button>' : ''}</div>
     </form>`;
   }
 
@@ -271,7 +271,7 @@ const UI = (() => {
       <div class="tt-detail-body">
         ${backButton(backLabel)}
         <header class="tt-detail-head">
-          <h1 class="tt-detail-name">${esc(r.name)}</h1>
+          <h1 class="tt-detail-name" tabindex="-1">${esc(r.name)}</h1>
           <p class="tt-detail-cuisine">${esc(r.primaryTypeDisplayName || '')}</p>
           ${dataRow(r)}
         </header>

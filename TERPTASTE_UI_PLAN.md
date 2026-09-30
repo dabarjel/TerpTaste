@@ -119,7 +119,21 @@ Rebuild each page with the new components:
 ✅ "Surprise me" picks at random from the current results (so search and filters apply), never the same spot twice in a row. It is now a regular button; gold stays reserved for ratings and the vote leader.
 ✅ **List / Map toggle** in the Discover header. List is active; Map is disabled and labelled "Soon" until the Google Maps view exists (see future notes). No dead button.
 
-## Phase 5: Polish
+## Phase 5: Polish ✅
+Done (2026-09-29), including an accessibility audit (WCAG 2.1 A/AA) and a craft review, with every finding fixed:
+- **Responsive:** no horizontal scroll on any screen at 320, 375, 768, 1280 and 1600px (checked on Discover, Filter, Crew, Deals, Saved, Profile and a detail page).
+- **Contrast (1.4.3, 1.4.11):** muted text raised to `#989792`, red text/icons use `--action-text` `#ED6E7F`, control outlines (chips, inputs, outlined buttons, unselected stars) use `--control-border` `#79797D`, and text on red is `#FFFCF8`. Every pair now passes on every surface.
+- **Structure (1.3.1, 2.4.1, 2.4.2, 2.4.6):** skip link, a `<main>` landmark, one `<h1>` per screen, per-screen page titles ("Deals | TerpTaste", spot name on detail), decorative SVGs hidden from assistive tech.
+- **Focus (2.4.3, 2.4.7):** navigating focuses the screen heading; opening a spot focuses its name; Back returns focus to the card you opened; visible focus ring on everything; the sticky header no longer hides focused items.
+- **Status and errors (3.3.1, 4.1.3):** whole-list live regions removed (counts and statuses announce instead); review errors are linked to the field with `aria-invalid` and `aria-describedby`.
+- **Timing (2.2.1):** the Undo toast pauses while hovered or focused and Escape closes it. Your review can also be removed from its edit form ("Remove review"), not only through Undo.
+- **Text spacing and size (1.4.12, 1.4.4):** dish rows size in `em`; Profile's 10–11px uppercase labels are now readable sizes.
+- **Motion:** every animation and transition is off under `prefers-reduced-motion`; the vote flip is 240ms.
+- **Craft:** documented z-index scale (sticky, toast, skip link), spacing back on the 4px scale, pressed (`:active`) and missing hover states designed, layered low-alpha overlay shadow, tabular numbers on Profile stats, no inline styles, unused legacy tokens removed.
+- **Performance:** unused font weight dropped (Big Shoulders 600), font stylesheet preloaded, images lazy-load, no unused CSS classes.
+- Out of scope: `case-study.html` / `css/case-study.css` (the separate case-study page) still uses gradients and pure white; it wasn't part of the app review.
+
+Original checklist:
 - Responsive at 375px, 768px, 1280px, and wider. No horizontal scroll on mobile.
 - Accessibility: color contrast passes WCAG AA, keyboard navigation works, visible focus states, alt text, proper labels on buttons and inputs.
 - Motion: subtle hover and transition effects, and respect `prefers-reduced-motion`.

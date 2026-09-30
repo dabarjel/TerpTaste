@@ -62,12 +62,20 @@ function highlightNav(id){
     else el.removeAttribute('aria-current');
   });
 }
+const SCREEN_TITLES = { home:'Discover', filter:'Filter', crew:'Crew', deals:'Deals', saved:'Saved spots', profile:'Profile' };
+const setTitle = t => { document.title = `${t} | TerpTaste`; };
+// Put keyboard and screen reader focus on a screen's heading (without jumping the scroll).
+const focusHeading = panel => document.querySelector(`#panel-${panel} h1`)?.focus({ preventScroll:true });
+
 // restoreScroll: return to where the user was on that screen (used by Back from detail).
 // section: id of a section to scroll to once the screen has rendered.
-function go(id, { restoreScroll = false, section = null } = {}) {
-  const scroller = document.getElementById('main-scroll');
+// focus: move focus to the screen's heading (off for the first load).
+// focusOpen: after rendering, focus the element that opens this spot (Back returns you to it).
+function go(id, { restoreScroll = false, section = null, focus = true, focusOpen = null } = {}) {
+  const scroller = document.getElementById('main');
   showPanel(id);
   highlightNav(id);
+  setTitle(SCREEN_TITLES[id] || 'TerpTaste');
   scroller.scrollTop = 0;
   let rendering;
   if(id==='home') rendering = renderHome();
@@ -76,10 +84,18 @@ function go(id, { restoreScroll = false, section = null } = {}) {
   if(id==='profile') rendering = renderProfile();
   if(id==='crew') rendering = renderCrew();
   if(id==='deals') rendering = renderDeals();
-  if(restoreScroll){
+  if(focus && !focusOpen) focusHeading(id);
+  if(restoreScroll || focusOpen){
     const y = scrollMemory[id] || 0;
     // The list is in the DOM once rendering resolves, so the position can be set right away.
-    Promise.resolve(rendering).then(()=>{ if(activePanel()===id) scroller.scrollTop = y; });
+    Promise.resolve(rendering).then(()=>{
+      if(activePanel()!==id) return;
+      if(restoreScroll) scroller.scrollTop = y;
+      if(focusOpen){
+        const opener = document.querySelector(`#panel-${id} [data-open="${CSS.escape(focusOpen)}"]`);
+        opener ? opener.focus({ preventScroll:true }) : focusHeading(id);
+      }
+    });
   }
   if(section) Promise.resolve(rendering).then(()=>document.getElementById(section)?.scrollIntoView({ block:'start' }));
 }
@@ -254,20 +270,22 @@ document.getElementById('filter-apply').addEventListener('click', ()=>go('home')
 // ── DETAIL ────────────────────────────────────────────────────────────────────
 const BACK_LABELS = { home:'Back to Discover', saved:'Back to Saved', crew:'Back to Crew', deals:'Back to Deals', profile:'Back to Profile', filter:'Back to Filter' };
 let detailFrom = 'home';
+let detailId = null;                                   // spot on the detail page (Back refocuses its card)
 let detailReq = 0;
 
 // Opens right away with a skeleton, then fills in. Back returns to the screen (and
 // scroll position) the user came from.
 async function showDetail(key) {
   const from = activePanel();
-  if(from && from!=='detail'){ detailFrom = from; scrollMemory[from] = document.getElementById('main-scroll').scrollTop; }
+  if(from && from!=='detail'){ detailFrom = from; scrollMemory[from] = document.getElementById('main').scrollTop; }
   const req = ++detailReq;
+  detailId = key;
   const root = document.getElementById('detail-root');
   const backLabel = BACK_LABELS[detailFrom] || 'Back';
   const handlers = { back: goBack };
   showPanel('detail');
   highlightNav(detailFrom);                         // stay "inside" the screen you came from
-  document.getElementById('main-scroll').scrollTop = 0;
+  document.getElementById('main').scrollTop = 0;
   const t = setTimeout(()=>{ if(req===detailReq) UI.mount(root, UI.detailSkeleton(backLabel), handlers); }, 150);
   let r;
   try { r = await TerpData.getRestaurant(key); }
@@ -281,6 +299,8 @@ async function showDetail(key) {
   clearTimeout(t);
   if(req!==detailReq) return;
   renderDetailContent(r);
+  setTitle(r.name);
+  document.querySelector('#detail-root .tt-detail-name')?.focus({ preventScroll:true });
 }
 function renderDetailContent(r){
   UI.mount(document.getElementById('detail-root'), UI.detail(r, { backLabel: BACK_LABELS[detailFrom] || 'Back' }), {
@@ -290,15 +310,17 @@ function renderDetailContent(r){
   });
 }
 // Re-render the open detail page in place (after a review), keeping the scroll position.
-async function refreshDetail(id){
-  const scroller = document.getElementById('main-scroll');
+// focusSel: what to focus afterwards, since re-rendering replaces the focused element.
+async function refreshDetail(id, focusSel = null){
+  const scroller = document.getElementById('main');
   const y = scroller.scrollTop;
   const r = await TerpData.getRestaurant(id);
   if(activePanel()!=='detail') return;
   renderDetailContent(r);
   scroller.scrollTop = y;
+  if(focusSel) document.querySelector(focusSel)?.focus({ preventScroll:true });
 }
-function goBack(){ go(detailFrom, { restoreScroll:true }); }
+function goBack(){ go(detailFrom, { restoreScroll:true, focusOpen: detailId }); }
 
 // ── QUICK REVIEW ──────────────────────────────────────────────────────────────
 // Stars, what you got (menu pick or typed), optional one line. The dish feeds highlights.
@@ -314,22 +336,40 @@ function toggleReviewForm(r){
   const syncDishes = ()=>box.querySelectorAll('[data-dish]').forEach(ch=>ch.setAttribute('aria-pressed', ch.dataset.dish===got.value.trim()));
   box.querySelectorAll('[data-dish]').forEach(ch=>ch.addEventListener('click', ()=>{ got.value = ch.dataset.dish; syncDishes(); }));
   got.addEventListener('input', syncDishes);
+  const VISIT_BTN = '#detail-visit [data-action="review"]';
+  const undoTo = previous => ()=>{
+    TerpData.restoreReview(r.id, previous);
+    updateStats();
+    if(activePanel()==='detail') refreshDetail(r.id, VISIT_BTN);
+    if(activePanel()==='crew') renderCrewActivity();
+  };
+  // Errors are tied to the field that needs fixing (aria-invalid + aria-describedby).
+  const clearInvalid = ()=>form.querySelectorAll('[aria-invalid]').forEach(el=>{ el.removeAttribute('aria-invalid'); el.removeAttribute('aria-describedby'); });
   form.addEventListener('submit', e=>{
     e.preventDefault();
+    clearInvalid();
     const rating = Number(form.elements.rating.value);
-    const fail = (msg, el)=>{ err.textContent = msg; err.hidden = false; el.focus(); };
-    if(!rating) return fail('Pick a star rating.', form.querySelector('input[name="rating"]'));
-    if(!got.value.trim()) return fail('Add what you got: pick it from the menu or type it.', got);
+    const fail = (msg, fields, focusEl)=>{
+      err.textContent = msg; err.hidden = false;
+      fields.forEach(el=>{ el.setAttribute('aria-invalid','true'); el.setAttribute('aria-describedby','review-error'); });
+      focusEl.focus();
+    };
+    const stars = [...form.querySelectorAll('input[name="rating"]')];
+    if(!rating) return fail('Pick a star rating.', stars, stars[0]);
+    if(!got.value.trim()) return fail('Add what you got: pick it from the menu or type it.', [got], got);
     const res = TerpData.saveReview(r.id, { rating, got: got.value, note: form.elements.note.value });
-    if(!res.ok) return fail('That review couldn’t be saved. Check the rating and dish, then try again.', got);
-    refreshDetail(r.id);
+    if(!res.ok) return fail('That review couldn’t be saved. Check the rating and dish, then try again.', [got], got);
+    refreshDetail(r.id, VISIT_BTN);
     updateStats();
-    showToast(res.previous ? `Updated your review of ${r.name}` : `Posted: you went to ${r.name}`, { action:{ label:'Undo', run:()=>{
-      TerpData.restoreReview(r.id, res.previous);
-      updateStats();
-      if(activePanel()==='detail') refreshDetail(r.id);
-      if(activePanel()==='crew') renderCrewActivity();
-    }}});
+    showToast(res.previous ? `Updated your review of ${r.name}` : `Posted: you went to ${r.name}`, { action:{ label:'Undo', run: undoTo(res.previous) } });
+  });
+  // Removing your review is always available here, not only through a toast's Undo.
+  box.querySelector('[data-action="remove-review"]')?.addEventListener('click', ()=>{
+    const previous = r.terp.myReview;
+    TerpData.restoreReview(r.id, null);
+    updateStats();
+    refreshDetail(r.id, VISIT_BTN);
+    showToast(`Removed your review of ${r.name}`, { action:{ label:'Undo', run: undoTo(previous) } });
   });
   (form.querySelector('input[name="rating"]:checked') || form.querySelector('input[name="rating"]')).focus();
 }
@@ -524,7 +564,7 @@ function renderProfile() {
   const h = document.getElementById('visit-history');
   // Visits = your reviews plus any check-ins saved before check-in merged into reviews.
   const visits = TerpData.getVisits();
-  if(!visits.length){ h.innerHTML = `<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">No visits yet. Tap “I went here” on a spot after you eat there.</div>`; return; }
+  if(!visits.length){ h.innerHTML = `<p class="tt-muted-line">No visits yet. Tap “I went here” on a spot after you eat there.</p>`; return; }
   return withLoading(h, TerpData.getRestaurants({ids: visits.map(v=>v.id)}), list=>{
     const byId = new Map(list.map(r=>[r.id,r]));
     h.innerHTML = visits.map(v=>{
@@ -556,7 +596,10 @@ document.getElementById('surprise-btn').addEventListener('click', surpriseMe);
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 // Optional action (e.g. Undo) keeps the toast up longer so there's time to use it.
-let tTimer;
+// The timer pauses while the toast is hovered or focused, so there's always time to use
+// Undo (WCAG 2.2.1); Escape closes it.
+let tTimer, tDelay = 0;
+const armToast = ()=>{ clearTimeout(tTimer); tTimer = setTimeout(hideToast, tDelay); };
 function showToast(msg, { action } = {}){
   const t = document.getElementById('toast');
   const btn = document.getElementById('toast-action');
@@ -568,10 +611,18 @@ function showToast(msg, { action } = {}){
     btn.onclick = ()=>{ hideToast(); action.run(); };
   }
   t.classList.add('show');
-  clearTimeout(tTimer);
-  tTimer = setTimeout(hideToast, action ? 6000 : 2400);
+  tDelay = action ? 8000 : 3000;
+  armToast();
 }
 function hideToast(){ clearTimeout(tTimer); document.getElementById('toast').classList.remove('show'); }
+(()=>{
+  const t = document.getElementById('toast');
+  const pause = ()=>clearTimeout(tTimer);
+  const resume = ()=>{ if(t.classList.contains('show') && !t.matches(':hover') && !t.contains(document.activeElement)) armToast(); };
+  t.addEventListener('mouseenter', pause); t.addEventListener('focusin', pause);
+  t.addEventListener('mouseleave', resume); t.addEventListener('focusout', ()=>setTimeout(resume));
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && t.classList.contains('show')) hideToast(); });
+})();
 
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
@@ -586,6 +637,7 @@ function loadFacets(){
   }).catch(err=>console.error(err));
 }
 highlightNav('home');
+setTitle('Discover');
 renderChips();
 loadFacets();
 renderHome();
