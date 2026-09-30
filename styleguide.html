@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TerpTaste Styleguide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/components.css">
+<style>
+/* All values come from css/tokens.css. Cards and states come from css/components.css;
+   only styleguide layout and not-yet-extracted components live here. */
+
+/* ── Base ──────────────────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--bg-page);}
+body{background:var(--bg-page);color:var(--text-primary);font-family:var(--f-body);font-size:var(--t-16);line-height:var(--lh-body);-webkit-font-smoothing:antialiased;}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;}
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
+.wrap{max-width:1120px;margin:0 auto;padding:0 var(--s-4);}
+@media (min-width:768px){.wrap{padding:0 var(--s-6);}}
+
+/* ── Styleguide chrome ─────────────────────────────────────────────── */
+.sg-top{position:sticky;top:0;z-index:20;background:var(--bg-page);border-bottom:1px solid var(--border);}
+.sg-top .wrap{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:var(--s-3);padding-top:var(--s-3);padding-bottom:var(--s-3);}
+.sg-logo{font-family:var(--f-display);font-weight:900;font-size:var(--t-28);line-height:1;letter-spacing:var(--tracking-display);}
+.sg-dir{font-size:var(--t-14);color:var(--text-secondary);}
+.sg-note{padding:var(--s-5) 0 0;color:var(--text-secondary);font-size:var(--t-14);max-width:64ch;}
+.sg-note code{font-family:var(--f-data);color:var(--text-primary);}
+.sg-section{padding:var(--section-gap) 0 0;}
+.sg-h{font-family:var(--f-display);font-weight:800;font-size:var(--t-20);color:var(--text-muted);margin-bottom:var(--s-4);letter-spacing:.01em;}
+
+/* palette */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--s-3);}
+.sw{border-radius:var(--r-card);overflow:hidden;background:var(--surface-1);border:1px solid var(--border);}
+.sw-chip{height:64px;}
+.sw-meta{padding:var(--s-2) var(--s-3);font-size:var(--t-12);color:var(--text-secondary);}
+.sw-meta b{display:block;color:var(--text-primary);font-weight:600;font-size:var(--t-14);}
+.sw-meta code{font-family:var(--f-data);}
+
+/* type scale */
+.tscale{display:grid;gap:var(--s-3);}
+.trow{display:grid;grid-template-columns:72px 1fr;align-items:baseline;gap:var(--s-4);border-bottom:1px solid var(--border);padding-bottom:var(--s-3);}
+.trow .px{font-family:var(--f-data);font-size:var(--t-12);color:var(--text-muted);}
+.d{font-family:var(--f-display);font-weight:900;line-height:var(--lh-display);letter-spacing:var(--tracking-display);}
+
+/* ── Discover: search, chips, walk-time dividers, cards ───────────── */
+.phone{background:var(--bg-page);border:1px solid var(--border);border-radius:var(--r-sheet);padding:var(--s-5) var(--s-4) var(--s-6);}
+@media (min-width:768px){.phone{padding:var(--s-6);}}
+.disc-head{display:flex;justify-content:space-between;align-items:flex-end;gap:var(--s-3);flex-wrap:wrap;}
+.phone .tt-walk{padding-left:0;padding-right:0;}
+.phone .tt-results-head{padding-left:0;padding-right:0;}
+.disc-title{font-family:var(--f-display);font-weight:900;font-size:var(--t-44);line-height:.9;}
+
+
+
+.foot{padding:var(--s-8) 0 var(--s-7);color:var(--text-muted);font-size:var(--t-12);}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;}
+}
+</style>
+</head>
+<body>
+
+<header class="sg-top">
+  <div class="wrap">
+    <div class="sg-logo">TerpTaste styleguide</div>
+    <div class="sg-dir">Direction A: Signage</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="sg-note">Flat surfaces with no borders and small corners. The cuisine name bleeds off the bottom of each tile like a painted sign. Every value on this page comes from <code>css/tokens.css</code>.</p>
+
+  <section class="sg-section" aria-labelledby="h-disc">
+    <h2 class="sg-h" id="h-disc">Discover</h2>
+    <div class="phone">
+      <div class="disc-head">
+        <h3 class="disc-title">Discover</h3>
+        <button class="tt-btn" type="button">Surprise me</button>
+      </div>
+      <label class="tt-search" style="margin-top:var(--s-4)">
+        <span aria-hidden="true" style="color:var(--text-muted)">⌕</span>
+        <input type="search" placeholder="Search spots or dishes" aria-label="Search spots or dishes">
+      </label>
+      <div class="tt-chips" role="group" aria-label="Quick filters">
+        <button class="tt-chip" type="button" aria-pressed="false">Under $15</button>
+        <button class="tt-chip" type="button" aria-pressed="false">Vegan</button>
+        <button class="tt-chip" type="button" aria-pressed="false">Halal</button>
+        <button class="tt-chip" type="button" aria-pressed="false">Sit-down</button>
+        <button class="tt-chip" type="button" aria-pressed="false">Open late</button>
+      </div>
+      <div id="discover"></div>
+    </div>
+  </section>
+
+  <section class="sg-section" aria-labelledby="h-vote">
+    <h2 class="sg-h" id="h-vote">Group vote</h2>
+    <div class="sg-boards"><div id="board-live"></div><div id="board-final"></div></div>
+  </section>
+
+  <section class="sg-section" aria-labelledby="h-states">
+    <h2 class="sg-h" id="h-states">States</h2>
+    <div class="states" id="states"></div>
+  </section>
+
+  <section class="sg-section" aria-labelledby="h-type">
+    <h2 class="sg-h" id="h-type">Type</h2>
+    <div class="tscale">
+      <div class="trow"><span class="px">72 display</span><span class="d" style="font-size:var(--t-72)">4 votes</span></div>
+      <div class="trow"><span class="px">44 display</span><span class="d" style="font-size:var(--t-44)">Taqueria Habanero</span></div>
+      <div class="trow"><span class="px">28 display</span><span class="d" style="font-size:var(--t-28);font-weight:800">Under 10 min walk</span></div>
+      <div class="trow"><span class="px">16 body</span><span>Al pastor and a hibiscus agua fresca. Free chips with your first order.</span></div>
+      <div class="trow"><span class="px">14 data</span><span style="font-family:var(--f-data);font-size:var(--t-14)">$$   0.4 mi   8 min</span></div>
+      <div class="trow"><span class="px">12 body</span><span style="font-size:var(--t-12);color:var(--text-secondary)">Jordan checked in 2 hours ago</span></div>
+    </div>
+  </section>
+
+  <section class="sg-section" aria-labelledby="h-color">
+    <h2 class="sg-h" id="h-color">Color</h2>
+    <div class="swatches">
+      <div class="sw"><div class="sw-chip" style="background:var(--asphalt)"></div><div class="sw-meta"><b>Asphalt</b><code>#1A1B1D</code> page</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--curb)"></div><div class="sw-meta"><b>Curb</b><code>#25262A</code> surfaces</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--lane)"></div><div class="sw-meta"><b>Lane line</b><code>#3A3B40</code> borders</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--chalk)"></div><div class="sw-meta"><b>Chalk</b><code>#EFEDE8</code> text</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--red)"></div><div class="sw-meta"><b>Terp Red</b><code>#E21833</code> action, selection</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--gold)"></div><div class="sw-meta"><b>Gold</b><code>#FFD200</code> rating, leader</div></div>
+      <div class="sw"><div class="sw-chip" style="background:var(--open)"></div><div class="sw-meta"><b>Open</b><code>#3FC47F</code> open-now status</div></div>
+    </div>
+  </section>
+
+  <p class="foot">Sample data from College Park. Walk time assumes 3 mph.</p>
+</main>
+
+<script src="js/data/mock-places.js"></script>
+<script src="js/data/terp-content.js"></script>
+<script src="js/data/mock-friends.js"></script>
+<script src="js/data/restaurants.js"></script>
+<script src="js/ui/components.js"></script>
+<script>
+// Discover uses the real card component and mock data, grouped by walk time.
+// Discover uses the app's components: friends row, then every spot once by walk time.
+async function renderDiscover(){
+  const el = document.getElementById('discover');
+  try {
+    const list = await TerpData.getRestaurants({ sort:'distance' });
+    const loved = list.filter(r=>r.terp.friendRating && r.terp.friendRating.avg>=4)
+      .sort((a,b)=>b.terp.friendRating.avg-a.terp.friendRating.avg || b.terp.friendRating.count-a.terp.friendRating.count).slice(0,4);
+    el.innerHTML = UI.cardRow('Your friends love', 'sg-row-friends', loved) + UI.walkSections(list.slice(0, 9));
+  } catch(err) {
+    UI.mount(el, UI.errorState(), { retry: renderDiscover });
+  }
+}
+document.getElementById('states').innerHTML =
+  UI.skeletonCards(1) +
+  UI.emptyState({ title:'No spots match', body:'Nothing nearby matches this filter yet.', action:{ label:'Show all spots', name:'all' } }) +
+  UI.errorState();
+
+// Scoreboard: sample sessions shaped like TerpData.getVote(); they never touch the user's real vote.
+const SG_MEMBERS = [{id:'me',name:'You',initials:'DA'},{id:'ak',name:'Aisha K.',initials:'AK'},{id:'jt',name:'Jordan T.',initials:'JT'},{id:'mr',name:'Marcus R.',initials:'MR'}];
+function sampleVote(votes){
+  const ids = ['habanero','qu','aroy'];
+  const counts = Object.fromEntries(ids.map(id=>[id, Object.values(votes).filter(v=>v===id).length]));
+  const max = Math.max(...Object.values(counts));
+  const voted = Object.keys(votes).length;
+  return { name:'Friday dinner', total:4, votedCount:voted, mine:votes.me||null,
+    members: SG_MEMBERS.map(m=>({...m, voted: m.id in votes})),
+    options: ids.map((id,i)=>({ id, addedBy: i===2 ? 'me' : 'ak', mine: i===2, count: counts[id] })),
+    leaders: max ? ids.filter(id=>counts[id]===max) : [],
+    state: voted===4 ? 'final' : voted ? 'leading' : 'waiting' };
+}
+const liveVotes = { me:'habanero', ak:'habanero', jt:'qu' };
+let byId, lastLive = {};
+function renderBoards(){
+  const v = sampleVote(liveVotes);
+  const changed = v.options.filter(o=>o.id in lastLive && lastLive[o.id]!==o.count).map(o=>o.id);
+  lastLive = Object.fromEntries(v.options.map(o=>[o.id,o.count]));
+  document.getElementById('board-live').innerHTML = UI.scoreboard(v, byId, { changed });
+  document.getElementById('board-final').innerHTML = UI.scoreboard(sampleVote({ me:'qu', ak:'habanero', jt:'qu', mr:'qu' }), byId);
+}
+document.getElementById('board-live').addEventListener('click', e=>{
+  const row = e.target.closest('[data-vote]');
+  if(row){ liveVotes.me = row.dataset.vote; renderBoards(); }
+});
+TerpData.getRestaurants({ ids:['habanero','qu','aroy'] }).then(list=>{ byId = new Map(list.map(r=>[r.id,r])); renderBoards(); });
+
+// Toggles
+document.addEventListener('click',e=>{
+  const chip = e.target.closest('.tt-chip');
+  if(chip){ chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed')!=='true'); return; }
+  const save = e.target.closest('[data-save]');
+  if(save){ UI.setSaveButton(save, save.getAttribute('aria-pressed')!=='true', ''); e.stopPropagation(); }
+});
+
+renderDiscover();
+</script>
+</body>
+</html>

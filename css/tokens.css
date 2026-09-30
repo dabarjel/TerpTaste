@@ -1,0 +1,100 @@
+/* TerpTaste design tokens (direction A: Signage)
+   Single source of truth for color, type, spacing, radii, shadow and motion.
+   Fonts load from Google Fonts in each page's <head>:
+   Big Shoulders Display 600/800/900, Inter 400/500/600, IBM Plex Mono 500. */
+
+:root{
+  /* ── Color primitives ─────────────────────────────────────────────── */
+  --asphalt:#1A1B1D;      /* page */
+  --curb:#25262A;         /* raised surfaces, sheets */
+  --curb-2:#2E2F34;       /* hover surface, skeleton fill */
+  --tile:#202124;         /* photo-fallback tile */
+  --lane:#3A3B40;         /* borders, dividers, rules */
+  --chalk:#EFEDE8;        /* primary text */
+  --chalk-2:#B4B2AC;      /* secondary text */
+  --chalk-3:#989792;      /* muted text, meta (4.5:1+ on every surface) */
+  --red:#E21833;          /* Terp Red: actions and current selection only */
+  --red-press:#C8142C;    /* red hover / pressed */
+  --red-text:#ED6E7F;     /* Terp Red as text/icons on dark surfaces (4.5:1+); --red is for fills */
+  --control-edge:#79797D; /* outlines of chips, inputs, outlined buttons (3:1+ on every surface) */
+  --on-red:#FFFCF8;       /* text on red: warm near-white, 4.65:1 on --red */
+  --gold:#FFD200;         /* ratings and the vote leader only */
+  --open:#3FC47F;         /* open-now status only */
+
+  /* Avatar fills: each keeps 4.5:1+ with --on-red initials */
+  --avatar-red:#D3373A;
+  --avatar-blue:#3977B4;
+  --avatar-green:#238350;
+  --avatar-purple:#9B59B6;
+  --avatar-orange:#AF601A;
+  --avatar-teal:#12826C;
+
+  /* ── Semantic color ───────────────────────────────────────────────── */
+  --bg-page:var(--asphalt);
+  --surface-1:var(--curb);
+  --surface-2:var(--curb-2);
+  --surface-tile:var(--tile);
+  --border:var(--lane);
+  --text-primary:var(--chalk);
+  --text-secondary:var(--chalk-2);
+  --text-muted:var(--chalk-3);
+  --action:var(--red);
+  --action-text:var(--red-text);
+  --control-border:var(--control-edge);
+  --action-press:var(--red-press);
+  --on-action:var(--on-red);
+  --highlight:var(--gold);
+  --status-open:var(--open);
+  --status-closed:var(--chalk-3);
+  --success:var(--open);
+  --danger:var(--red);
+  --focus-ring:var(--chalk);
+  --scrim:color-mix(in srgb,var(--asphalt) 70%,transparent);
+
+  /* ── Type ─────────────────────────────────────────────────────────── */
+  --f-display:'Big Shoulders Display',Impact,sans-serif; /* names, titles, vote counts */
+  --f-body:'Inter',system-ui,sans-serif;                 /* body, buttons, labels */
+  --f-data:'IBM Plex Mono',ui-monospace,monospace;       /* comparable numbers only */
+
+  --t-12:12px; --t-14:14px; --t-16:16px; --t-20:20px;
+  --t-28:28px; --t-44:44px; --t-72:72px;
+
+  --lh-display:.95;
+  --lh-body:1.5;
+  --tracking-display:-.01em;
+
+  /* ── Spacing ──────────────────────────────────────────────────────── */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px;
+  --s-5:24px; --s-6:32px; --s-7:48px; --s-8:64px;
+
+  /* ── Radii (small on cards, larger on sheets) ─────────────────────── */
+  --r-card:6px;
+  --r-control:8px;
+  --r-sheet:10px;
+  --r-pill:999px;
+
+  /* ── Elevation (Signage is flat; shadow only on floating layers) ──── */
+  --shadow-none:none;
+  --shadow-overlay:0 1px 2px rgba(0,0,0,.24),0 8px 24px rgba(0,0,0,.28);
+
+  /* ── Layers: the only z-indexes outside a component's own isolated stack ── */
+  --z-sticky:10;      /* sticky screen headers and footers */
+  --z-toast:900;      /* toast */
+  --z-skip:1000;      /* skip link, above everything when focused */
+
+  /* ── Motion ───────────────────────────────────────────────────────── */
+  --ease-out:cubic-bezier(.2,.8,.2,1);
+  --dur-fast:120ms;
+  --dur-flip:240ms;   /* scoreboard count flip, the one signature motion */
+
+  /* ── Component tokens ─────────────────────────────────────────────── */
+  --card-bg:var(--surface-1);
+  --card-gap:var(--s-3);
+  --card-name-size:var(--t-28);
+  --tile-h:128px;
+  --tile-word-size:112px;
+  --tile-word-color:var(--curb-2);
+  --tile-word-hover:var(--lane);                   /* decorative (aria-hidden) */
+  --vote-count-size:56px;
+  --section-gap:var(--s-6);
+}

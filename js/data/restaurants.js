@@ -1,0 +1,392 @@
+// ── TerpTaste data layer ──────────────────────────────────────────────────────
+// The only file the UI talks to for restaurant data. Today it reads the local mock
+// (MOCK_PLACES + TERP_CONTENT); later fetchPlaces() calls the backend proxy that holds
+// the Google Places key, and nothing outside this file changes.
+//
+// Restaurant shape returned by getRestaurants() / getRestaurant():
+//   Google Places fields
+//     id, name, address, location {lat,lng}, rating, userRatingCount, priceLevel,
+//     types, primaryTypeDisplayName, photos, openingHours, isOpenNow
+//   Derived here
+//     distanceMiles   straight-line miles from campus (from location, or the mock value)
+//   TerpTaste-only (never from Google), under .terp
+//     saved, visited (your review, or an older check-in), groupVotes, studentTags,
+//     highlights (up to 3: dishes friends rated 4+, then curated), menuItems, deals
+//     (weekly), dealsToday, friendReviews, friendRating {avg,count} or null, myReview, badge,
+//     hoursNote, waitMinutes, waitNote,
+//     priceRange, review, menu, dietNotes
+//
+// Test switches (URL params): ?delay=500 adds latency, ?fail=1 makes every fetch reject,
+// ?friendsVote=1 has the mock group members vote so Leading/Final can be reviewed,
+// ?today=mon pretends it is that day of the week (for reviewing deals).
+
+const TerpData = (() => {
+  const params = new URLSearchParams(location.search);
+  const config = {
+    delayMs: Number(params.get('delay')) || 0,
+    fail: params.get('fail') === '1',
+    friendsVote: params.get('friendsVote') === '1',
+    today: ['sun','mon','tue','wed','thu','fri','sat'].includes(params.get('today')) ? params.get('today') : null,
+  };
+
+  // ── Deals ───────────────────────────────────────────────────────────────────
+  const DAYS = ['sun','mon','tue','wed','thu','fri','sat'];
+  const WHERE = ['in-store','uber-eats','doordash'];
+  const todayKey = () => config.today || DAYS[new Date().getDay()];
+  function normDeal(d) {
+    if (!d || typeof d.title !== 'string' || !d.title.trim()) return null;
+    return {
+      id: String(d.id || d.title),
+      title: d.title.trim(),
+      price: typeof d.price === 'number' && isFinite(d.price) ? d.price : null,
+      days: DAYS.filter(x => (d.days || []).includes(x)),        // week order
+      where: WHERE.includes(d.where) ? d.where : 'in-store',
+      url: typeof d.url === 'string' ? d.url : null,             // optional deep link for app deals
+      lastChecked: typeof d.lastChecked === 'string' ? d.lastChecked : null,
+      sample: d.sample !== false,
+    };
+  }
+
+  const CAMPUS = { lat: 38.9869, lng: -76.9426 }; // McKeldin Mall, UMD College Park
+
+  // ── User state (TerpTaste-only) ─────────────────────────────────────────────
+  // Persisted to localStorage when available. Storage can be missing or throw (private
+  // windows, blocked site data), so every access is wrapped and the app falls back to
+  // in-memory state.
+  const STORAGE_KEY = 'terptaste:user:v1';
+  // Group vote session. Members are mock until there's a backend; only "me" votes for real.
+  // options: [{id, addedBy}], votes: {memberId: placeId}. Starts empty.
+  const MEMBERS = [
+    { id:'me', name:'You',       initials:'DA' },
+    { id:'ak', name:'Aisha K.',  initials:'AK' },
+    { id:'jt', name:'Jordan T.', initials:'JT' },
+    { id:'mr', name:'Marcus R.', initials:'MR' },
+  ];
+  const emptySession = () => ({ name: 'Friday dinner', options: [], votes: {} });
+  const user = {
+    saved: new Set(),
+    checkIns: [],                                    // older check-ins [{id, date}]; read-only now, see Visits
+    session: emptySession(),
+    reviews: {},                                     // placeId → {rating, got, note, date}
+  };
+
+  // ── Friends (mock until there are accounts; see js/data/mock-friends.js) ────
+  const FRIENDS = typeof MOCK_FRIENDS !== 'undefined' ? MOCK_FRIENDS : [];
+  const friendById = new Map(FRIENDS.map(f => [f.id, f]));
+  const loadedAt = Date.now();
+  const FRIEND_ACTIVITY = (typeof MOCK_FRIEND_ACTIVITY !== 'undefined' ? MOCK_FRIEND_ACTIVITY : [])
+    .filter(a => friendById.has(a.friend) && a.rating >= 1 && a.rating <= 5)
+    .map(a => ({ who: friendById.get(a.friend), placeId: a.placeId, rating: a.rating, got: a.got || '', note: a.note || '',
+                 at: new Date(loadedAt - a.hoursAgo * 3600e3).toISOString() }));
+  const cleanReview = (r) => {
+    const rating = Math.round(Number(r && r.rating));
+    const got = String((r && r.got) || '').trim().slice(0, 60);
+    if (!(rating >= 1 && rating <= 5) || !got) return null;
+    return { rating, got, note: String(r.note || '').trim().slice(0, 140), date: typeof r.date === 'string' ? r.date : new Date().toISOString() };
+  };
+
+  function loadUser() {
+    let data;
+    try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (_) { return; }
+    if (!data || typeof data !== 'object') return;
+    const isStr = s => typeof s === 'string';
+    if (Array.isArray(data.saved)) user.saved = new Set(data.saved.filter(isStr));
+    if (Array.isArray(data.checkIns)) user.checkIns = data.checkIns.filter(c => c && isStr(c.id) && isStr(c.date));
+    // Older saves kept a seeded "vote" object; it's ignored so the vote starts empty.
+    const s = data.session;
+    if (s && Array.isArray(s.options)) {
+      const options = s.options.filter(o => o && isStr(o.id)).map(o => ({ id: o.id, addedBy: isStr(o.addedBy) ? o.addedBy : 'me' }));
+      const ids = new Set(options.map(o => o.id));
+      const votes = {};
+      MEMBERS.forEach(m => { const v = s.votes && s.votes[m.id]; if (isStr(v) && ids.has(v)) votes[m.id] = v; });
+      user.session = { name: isStr(s.name) ? s.name : 'Friday dinner', options, votes };
+    }
+    if (data.reviews && typeof data.reviews === 'object') {
+      Object.entries(data.reviews).forEach(([id, r]) => { const c = cleanReview(r); if (c) user.reviews[id] = c; });
+    }
+  }
+  function persist() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ saved: [...user.saved], checkIns: user.checkIns, session: user.session, reviews: user.reviews }));
+    } catch (_) { /* storage unavailable: keep in-memory state */ }
+  }
+  loadUser();
+
+  // ── Source ──────────────────────────────────────────────────────────────────
+  // Swap point: replace the body with a fetch to the proxy that returns the same shape.
+  function fetchPlaces() {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        if (config.fail) reject(new Error('Restaurants could not be loaded (fail=1 test switch).'));
+        else resolve(MOCK_PLACES);
+      }, config.delayMs);
+    });
+  }
+
+  function milesBetween(a, b) {
+    const toRad = d => d * Math.PI / 180, R = 3958.8;
+    const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+    const h = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng/2)**2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  // Menu text → pickable items. Splits on commas and periods, but not inside parentheses.
+  function menuItems(menu) {
+    if (!menu) return [];
+    const out = []; let cur = '', depth = 0;
+    for (const ch of menu) {
+      if (ch === '(') depth++;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if ((ch === ',' || ch === '.') && depth === 0) { out.push(cur); cur = ''; } else cur += ch;
+    }
+    out.push(cur);
+    return [...new Set(out.map(s => s.trim()).filter(s => s && s.length <= 60)
+      .map(s => s[0].toUpperCase() + s.slice(1)))];
+  }
+
+  // Standout dishes: dishes friends (and you) got and rated 4+, most mentioned first,
+  // then the curated review picks. Case-insensitive, capped at 3.
+  function mergeHighlights(curated, reviews) {
+    const counts = new Map();
+    reviews.filter(r => r.rating >= 4 && r.got).forEach(r => {
+      const k = r.got.toLowerCase();
+      counts.set(k, { name: counts.get(k)?.name || r.got, n: (counts.get(k)?.n || 0) + 1 });
+    });
+    const community = [...counts.values()].sort((a, b) => b.n - a.n).map(x => x.name);
+    const seen = new Set(), out = [];
+    [...community, ...curated].forEach(d => { const k = d.toLowerCase(); if (!seen.has(k)) { seen.add(k); out.push(d); } });
+    return out.slice(0, 3);
+  }
+
+  function toRestaurant(place) {
+    const { _mockDistanceMiles, ...fields } = place;
+    const content = TERP_CONTENT[place.id] || {};
+    const friendReviews = FRIEND_ACTIVITY.filter(a => a.placeId === place.id).sort((a, b) => b.at.localeCompare(a.at));
+    const myReview = user.reviews[place.id] || null;
+    const friendRating = friendReviews.length
+      ? { avg: Math.round(friendReviews.reduce((s, r) => s + r.rating, 0) / friendReviews.length * 10) / 10, count: friendReviews.length }
+      : null;
+    const curated = (content.highlights || []).filter(d => typeof d === 'string' && d.trim());
+    const distanceMiles = place.location
+      ? Math.round(milesBetween(CAMPUS, place.location) * 10) / 10
+      : (_mockDistanceMiles ?? null);
+    // Open status only when hours data says so. null = unknown; the UI shows nothing.
+    const isOpenNow = typeof place.openingHours?.openNow === 'boolean' ? place.openingHours.openNow
+      : typeof place.isOpenNow === 'boolean' ? place.isOpenNow
+      : null;
+    return {
+      ...fields,
+      isOpenNow,
+      distanceMiles,
+      terp: {
+        studentTags: [],
+        ...content,
+        highlights: mergeHighlights(curated, [...friendReviews, ...(myReview ? [myReview] : [])]),
+        menuItems: menuItems(content.menu),
+        friendReviews,                                // newest first
+        friendRating,                                 // {avg, count} or null when no friend has rated it
+        myReview,
+        deals: (content.deals || []).map(normDeal).filter(Boolean),
+        dealsToday: (content.deals || []).map(normDeal).filter(d => d && d.days.includes(todayKey())),
+        saved: user.saved.has(place.id),
+        visited: visitFor(place.id),                  // {date, rating|null, got|null} or null
+        groupVotes: user.session.options.some(o => o.id === place.id)
+          ? Object.values(user.session.votes).filter(v => v === place.id).length : null,
+      },
+    };
+  }
+
+  // filters (all optional):
+  //   ids            string[]  only these places, returned in this order
+  //   openNow        boolean
+  //   priceLevels    string[]  e.g. ['PRICE_LEVEL_INEXPENSIVE']
+  //   studentTags    string[]  every tag must match, e.g. ['vegan','halal']
+  //   anyStudentTags string[]  at least one must match, e.g. ['fast','sitdown']
+  //   cuisines       string[]  primaryTypeDisplayName is one of these
+  //   maxDistanceMiles number
+  //   query          string    matches name, cuisine, menu
+  //   savedOnly      boolean
+  //   friendsLove    boolean   friends rated it 4+ on average
+  //   sort           'distance' | 'friends' (friend rating) | undefined (source order)
+  async function getRestaurants(filters = {}) {
+    let list = (await fetchPlaces()).map(toRestaurant);
+    const f = filters;
+    if (f.ids) {
+      const byId = new Map(list.map(r => [r.id, r]));
+      list = f.ids.map(id => byId.get(id)).filter(Boolean);
+    }
+    if (f.openNow) list = list.filter(r => r.isOpenNow === true); // unknown hours never count as open
+    if (f.priceLevels?.length) list = list.filter(r => f.priceLevels.includes(r.priceLevel));
+    if (f.studentTags?.length) list = list.filter(r => f.studentTags.every(t => r.terp.studentTags.includes(t)));
+    if (f.anyStudentTags?.length) list = list.filter(r => f.anyStudentTags.some(t => r.terp.studentTags.includes(t)));
+    if (f.cuisines?.length) list = list.filter(r => f.cuisines.includes(r.primaryTypeDisplayName));
+    if (f.maxDistanceMiles != null) list = list.filter(r => r.distanceMiles != null && r.distanceMiles <= f.maxDistanceMiles);
+    if (f.savedOnly) list = list.filter(r => r.terp.saved);
+    if (f.friendsLove) list = list.filter(r => r.terp.friendRating && r.terp.friendRating.avg >= 4);
+    if (f.query) {
+      const q = f.query.trim().toLowerCase();
+      list = list.filter(r => [r.name, r.primaryTypeDisplayName, r.terp.menu].some(s => s && s.toLowerCase().includes(q)));
+    }
+    if (f.sort === 'distance') list = list.slice().sort((a, b) => (a.distanceMiles ?? Infinity) - (b.distanceMiles ?? Infinity));
+    if (f.sort === 'friends') list = list.slice().sort((a, b) =>
+      (b.terp.friendRating?.avg ?? 0) - (a.terp.friendRating?.avg ?? 0) || (b.terp.friendRating?.count ?? 0) - (a.terp.friendRating?.count ?? 0));
+    return list;
+  }
+
+  // ── Reviews and activity ────────────────────────────────────────────────────
+  // Friends' visits plus your own reviews, newest first, each with its place attached.
+  async function getActivity() {
+    const byId = new Map((await fetchPlaces()).map(toRestaurant).map(r => [r.id, r]));
+    const mine = Object.entries(user.reviews).map(([placeId, r]) => ({ who: { id: 'me', name: 'You' }, placeId, rating: r.rating, got: r.got, note: r.note, at: r.date }));
+    return [...FRIEND_ACTIVITY, ...mine].filter(a => byId.has(a.placeId))
+      .sort((a, b) => b.at.localeCompare(a.at)).map(a => ({ ...a, place: byId.get(a.placeId) }));
+  }
+  // Save (or replace) your review. Returns the previous review so Undo can restore it.
+  function saveReview(placeId, review) {
+    const clean = cleanReview({ ...review, date: new Date().toISOString() });
+    if (!clean) return { ok: false };
+    const previous = user.reviews[placeId] || null;
+    user.reviews[placeId] = clean;
+    persist();
+    return { ok: true, previous };
+  }
+  function restoreReview(placeId, previous) {
+    if (previous) user.reviews[placeId] = previous; else delete user.reviews[placeId];
+    persist();
+  }
+
+  // What the current data can be filtered by, so the UI only offers options backed by data.
+  //   hasHours     true once any place has real open/closed data (gates "Open now")
+  //   cuisines     distinct primaryTypeDisplayName values, A–Z
+  //   priceLevels  distinct priceLevel values, cheapest first
+  //   studentTags  distinct TerpTaste tags
+  async function getFacets() {
+    const list = (await fetchPlaces()).map(toRestaurant);
+    const uniq = xs => [...new Set(xs.filter(Boolean))];
+    const PRICE_ORDER = ['PRICE_LEVEL_INEXPENSIVE','PRICE_LEVEL_MODERATE','PRICE_LEVEL_EXPENSIVE','PRICE_LEVEL_VERY_EXPENSIVE'];
+    return {
+      hasHours: list.some(r => typeof r.isOpenNow === 'boolean'),
+      cuisines: uniq(list.map(r => r.primaryTypeDisplayName)).sort((a, b) => a.localeCompare(b)),
+      priceLevels: uniq(list.map(r => r.priceLevel)).sort((a, b) => PRICE_ORDER.indexOf(a) - PRICE_ORDER.indexOf(b)),
+      studentTags: uniq(list.flatMap(r => r.terp.studentTags)),
+    };
+  }
+
+  // Every deal at a known place, each with its restaurant attached as .place.
+  async function getDeals() {
+    const list = (await fetchPlaces()).map(toRestaurant);
+    return list.flatMap(r => r.terp.deals.map(d => ({ ...d, place: r })));
+  }
+
+  async function getRestaurant(id) {
+    const [r] = await getRestaurants({ ids: [id] });
+    if (!r) throw new Error(`No restaurant with id "${id}".`);
+    return r;
+  }
+
+  // ── User actions ────────────────────────────────────────────────────────────
+  function toggleSaved(id) { user.saved.has(id) ? user.saved.delete(id) : user.saved.add(id); persist(); return user.saved.has(id); }
+  function setSaved(id, on) { on ? user.saved.add(id) : user.saved.delete(id); persist(); return on; }
+  function savedIds() { return [...user.saved]; }
+  // Put a spot back at its old position (used by Undo after removing it).
+  function restoreSaved(id, index) {
+    const ids = [...user.saved].filter(x => x !== id);
+    ids.splice(Math.max(0, Math.min(index, ids.length)), 0, id);
+    user.saved = new Set(ids);
+    persist();
+  }
+
+  // ── Visits ──────────────────────────────────────────────────────────────────
+  // "I went here" is a review. Check-ins saved before check-in was merged into reviews are
+  // still loaded and kept, and count as visits without a rating, so older stored data works.
+  function localDay(d = new Date()) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  function visitFor(id) {
+    const r = user.reviews[id];
+    if (r) return { id, at: r.date, date: localDay(new Date(r.date)), rating: r.rating, got: r.got };
+    const c = user.checkIns.find(x => x.id === id);
+    return c ? { id, at: c.date, date: c.date, rating: null, got: null } : null;
+  }
+  // Every place you've been, newest first: [{id, date 'YYYY-MM-DD', rating|null, got|null}].
+  function getVisits() {
+    const ids = new Set([...Object.keys(user.reviews), ...user.checkIns.map(c => c.id)]);
+    return [...ids].map(visitFor).filter(Boolean).sort((a, b) => b.at.localeCompare(a.at));
+  }
+
+  // ── Group vote ──────────────────────────────────────────────────────────────
+  // state: 'empty' (no spots yet) | 'waiting' (no votes) | 'leading' (some voted) | 'final' (everyone voted)
+  function getVote() {
+    const s = user.session;
+    const counts = {};
+    s.options.forEach(o => { counts[o.id] = 0; });
+    Object.values(s.votes).forEach(id => { if (id in counts) counts[id]++; });
+    const votedCount = Object.keys(s.votes).length;
+    const max = Math.max(0, ...Object.values(counts));
+    const leaders = max > 0 ? s.options.filter(o => counts[o.id] === max).map(o => o.id) : [];
+    const state = !s.options.length ? 'empty' : votedCount === 0 ? 'waiting' : votedCount >= MEMBERS.length ? 'final' : 'leading';
+    return {
+      name: s.name,
+      members: MEMBERS.map(m => ({ ...m, voted: m.id in s.votes })),
+      options: s.options.map(o => ({ id: o.id, addedBy: o.addedBy, mine: o.addedBy === 'me', count: counts[o.id] })),
+      mine: s.votes.me || null,
+      votedCount, total: MEMBERS.length, leaders, state,
+    };
+  }
+  // Test switch only: mock friends vote so Leading/Final can be seen without a backend.
+  function simulateFriends() {
+    // Waits for two spots so the demo shows a real race rather than a unanimous pick.
+    if (!config.friendsVote || user.session.options.length < 2) return;
+    MEMBERS.slice(1).forEach((m, i) => {
+      if (!(m.id in user.session.votes)) user.session.votes[m.id] = user.session.options[i % 2].id;
+    });
+  }
+  function addVoteOption(id) {
+    if (user.session.options.some(o => o.id === id)) return false;
+    user.session.options.push({ id, addedBy: 'me' });
+    simulateFriends();
+    persist();
+    return true;
+  }
+  // Only spots you added can be removed. Returns what Undo needs to put it back.
+  function removeVoteOption(id) {
+    const s = user.session;
+    const index = s.options.findIndex(o => o.id === id && o.addedBy === 'me');
+    if (index < 0) return null;
+    const [option] = s.options.splice(index, 1);
+    const votes = {};
+    Object.entries(s.votes).forEach(([m, v]) => { if (v === id) { votes[m] = v; delete s.votes[m]; } });
+    persist();
+    return { option, index, votes };
+  }
+  function restoreVoteOption(snapshot) {
+    if (!snapshot || user.session.options.some(o => o.id === snapshot.option.id)) return;
+    user.session.options.splice(Math.min(snapshot.index, user.session.options.length), 0, snapshot.option);
+    Object.entries(snapshot.votes).forEach(([m, v]) => { if (!(m in user.session.votes)) user.session.votes[m] = v; });
+    persist();
+  }
+  function castVote(id) {
+    if (!user.session.options.some(o => o.id === id)) return false;
+    user.session.votes.me = id;
+    simulateFriends();
+    persist();
+    return true;
+  }
+  // Start over; returns the old session so Undo can bring it back.
+  function resetVote() {
+    const old = JSON.parse(JSON.stringify(user.session));
+    user.session = emptySession();
+    persist();
+    return old;
+  }
+  function restoreVote(old) { if (old) { user.session = old; persist(); } }
+
+  return {
+    config,
+    getRestaurants, getRestaurant, getFacets, getDeals, todayKey, DAYS,
+    getActivity, saveReview, restoreReview,
+    toggleSaved, setSaved, savedIds, restoreSaved,
+    getVisits,
+    getVote, addVoteOption, removeVoteOption, restoreVoteOption, castVote, resetVote, restoreVote,
+  };
+})();
