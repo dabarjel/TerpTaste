@@ -86,6 +86,9 @@ Priority fixes from the UX heuristics review (2026-09-29), component level:
 - **Search bar** on Discover (name and dish), feeding the same filter state.
 
 ## Phase 4: Screens
+First, before the screens (stop for review after this):
+0. **Highlighted dishes.** Every restaurant card shows up to 3 standout dishes as small tags under the name, on one line so the card stays compact; the row is hidden entirely when a spot has no dish data. The detail page shows the same dishes with more room. Source: `highlights` in `js/data/terp-content.js` (dishes the student review specifically recommends, all on the spot's menu). This is TerpTaste content, so it stays when Google Places data arrives.
+
 Rebuild each page with the new components:
 1. Home / Discover: walk-time sections replace "For You / Budget / More nearby / Worth the trip"; each spot appears once. Drop "For You — based on your preferences" unless it actually uses the profile preferences.
 2. Search results
@@ -93,7 +96,7 @@ Rebuild each page with the new components:
 4. Saved Spots: ✅ done in Phase 3 group 3: removing a spot shows an Undo action in the toast.
 5. Group vote flow: ✅ done in Phase 3 group 4: scoreboard board; the picker offers every restaurant (not just the first 12); options can be removed.
 Also: "Surprise me" picks at random instead of stepping through the list in order.
-Leave a placeholder spot on Discover and Detail for a map later. Don't build the map yet.
+Leave room for a **List / Map toggle** in the Discover header. List is the only working view this phase; don't build the map or show a dead Map button (hide it, or mark it Coming soon, until the map exists).
 
 ## Phase 5: Polish
 - Responsive at 375px, 768px, 1280px, and wider. No horizontal scroll on mobile.
@@ -112,3 +115,10 @@ Leave a placeholder spot on Discover and Detail for a map later. Don't build the
 ## Not in this round (next phase notes)
 - The Google Places API key **can't** live in frontend code on GitHub Pages. Anyone could grab it and run up charges. The next phase needs a small proxy (like a Cloudflare Worker or Vercel serverless function) that holds the key and calls Places for us.
 - Once the proxy exists, only `js/data/restaurants.js` should need to change.
+- **Map view (Google Places phase).** Discover gets a working List / Map toggle. The map **must be a Google Map** (Maps JavaScript API): Google Maps Platform terms require Places content shown on a map to be displayed on a Google Map, so no Leaflet/OpenStreetMap/Mapbox.
+  - Markers come from each place's `location`; tapping one opens the same card, then the detail view.
+  - The map uses the same shared filter state and search as the list, so switching views never changes the results.
+  - Keep Google's required attributions visible (map attribution, and photo `authorAttributions` on cards and detail).
+  - The Maps JavaScript API key is loaded in the browser by design, so it must be locked down: restrict it by HTTP referrer (the GitHub Pages domain) and to the Maps JavaScript API only. The Places key stays in the proxy.
+  - Detail view can add a small Google Map of the spot's location in the same phase.
+  - Map needs its own loading and error states (for example, key or quota errors fall back to the list with a message).
