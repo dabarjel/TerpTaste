@@ -70,8 +70,63 @@ const UI = (() => {
     return d.toDateString() === new Date().toDateString() ? 'Today' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
+  // Omitted entirely when a spot has neither a price level nor a distance yet.
   function dataRow(r) {
+    if (!price(r) && r.distanceMiles == null) return '';
     return `<div class="tt-data"><span>${price(r)}</span><span>${miles(r.distanceMiles)}</span><span class="tt-data-strong">${walkLabel(r.distanceMiles)}</span></div>`;
+  }
+
+  // ── Ratings and friends ───────────────────────────────────────────────────
+  const starText = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+  const stars = n => `<span class="tt-stars" role="img" aria-label="${n} out of 5 stars">${starText(n)}</span>`;
+  // "Friends: ★4.7 (3)" on cards, only when friends have rated the spot.
+  function friendRating(r) {
+    const fr = r.terp.friendRating;
+    if (!fr) return '';
+    return `<p class="tt-friends-rating"><span aria-hidden="true">Friends: <span class="tt-star">★</span>${fr.avg.toFixed(1)} (${fr.count})</span><span class="tt-visually-hidden">Friends rate it ${fr.avg.toFixed(1)} out of 5 from ${fr.count} ${fr.count === 1 ? 'rating' : 'ratings'}</span></p>`;
+  }
+  // "2h ago", "Yesterday", "3 days ago", then a date.
+  function timeAgo(iso) {
+    const ms = Date.now() - new Date(iso).getTime();
+    const h = Math.floor(ms / 3600e3);
+    if (h < 1) return 'Just now';
+    if (h < 24) return `${h}h ago`;
+    const d = Math.floor(h / 24);
+    if (d === 1) return 'Yesterday';
+    if (d < 7) return `${d} days ago`;
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+  // One visit: who, where (optional), when, stars, what they got, note.
+  function activityItem(a, { showPlace = true, actions = false } = {}) {
+    const me = a.who.id === 'me';
+    const who = me ? 'You' : a.who.name;
+    return `<article class="tt-activity">
+      <span class="tt-avatar tt-avatar--lg" style="background:${me ? 'var(--action)' : avatarColor(a.who.name)}" aria-hidden="true">${esc(me ? 'DA' : initials(a.who.name))}</span>
+      <div class="tt-activity-body">
+        <p class="tt-activity-head"><b>${esc(who)}</b>${showPlace ? ` went to <button type="button" class="tt-inline-link" data-open="${esc(a.place.id)}">${esc(a.place.name)}</button>` : ''}<span class="tt-when">${esc(timeAgo(a.at))}</span></p>
+        <p class="tt-activity-rating">${stars(a.rating)}<span>Got ${esc(a.got)}</span></p>
+        ${a.note ? `<p class="tt-activity-note">“${esc(a.note)}”</p>` : ''}
+        ${actions ? `<div class="tt-activity-actions">${saveTextButton(a.place, { cls: 'tt-mini-btn', offLabel: '♡ Save spot' })}<button type="button" class="tt-mini-btn" data-vote-add="${esc(a.place.id)}" data-name="${esc(a.place.name)}">Add to group vote</button></div>` : ''}
+      </div>
+    </article>`;
+  }
+
+  // Quick review: stars, what you got (menu pick or typed), optional one line.
+  function reviewForm(r) {
+    const mine = r.terp.myReview;
+    const options = [...new Set([...(r.terp.highlights || []), ...(r.terp.menuItems || [])])].slice(0, 10);
+    const starInputs = [1, 2, 3, 4, 5].map(n => `<label class="tt-star-input"><input type="radio" name="rating" value="${n}"${mine?.rating === n ? ' checked' : ''}><span aria-hidden="true">★</span><span class="tt-visually-hidden">${n} ${n === 1 ? 'star' : 'stars'}</span></label>`).join('');
+    return `<form class="tt-review-form" novalidate aria-labelledby="review-title">
+      <h2 class="tt-dsec-title" id="review-title">${mine ? 'Edit your review' : `How was ${esc(r.name)}?`}</h2>
+      <fieldset class="tt-field-group"><legend class="tt-field-label">Your rating</legend><div class="tt-star-row">${starInputs}</div></fieldset>
+      <fieldset class="tt-field-group"><legend class="tt-field-label">What did you get?</legend>
+        ${options.length ? `<div class="tt-fopts">${options.map(o => `<button type="button" class="tt-chip" data-dish="${esc(o)}" aria-pressed="${mine?.got === o}">${esc(o)}</button>`).join('')}</div>` : ''}
+        <label class="tt-field"><span class="tt-field-hint">${options.length ? 'Or type it' : 'Type what you got'}</span><input type="text" name="got" maxlength="60" autocomplete="off" value="${esc(mine?.got || '')}"></label>
+      </fieldset>
+      <label class="tt-field"><span class="tt-field-label">One line <span class="tt-field-hint">(optional)</span></span><input type="text" name="note" maxlength="140" autocomplete="off" value="${esc(mine?.note || '')}"></label>
+      <p class="tt-form-error" role="alert" hidden></p>
+      <div class="tt-form-actions"><button type="submit" class="tt-btn tt-btn--primary">${mine ? 'Update review' : 'Post review'}</button><button type="button" class="tt-btn" data-action="cancel-review">Cancel</button></div>
+    </form>`;
   }
 
   // Standout dishes. On cards the row is one line: tags that don't fit wrap onto a hidden
@@ -86,8 +141,8 @@ const UI = (() => {
   const DAY_NAMES = { sun:'Sunday', mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday' };
   const WHERE_LABEL = { 'in-store':'In store', 'uber-eats':'Uber Eats', 'doordash':'DoorDash' };
   const dayName = d => DAY_NAMES[d] || d;
-  function dealDays(days) {
-    if (!days.length) return 'Days not listed';
+  function dealDays(days, where = 'in-store') {
+    if (!days.length) return where === 'in-store' ? 'Days not listed' : 'Days vary, check the app';
     if (days.length === 7) return 'Every day';
     if (days.length === 1) return `${dayName(days[0])}s`;
     return days.map(d => dayName(d).slice(0, 3)).join(', ');
@@ -120,7 +175,7 @@ const UI = (() => {
         ${!app && d.price != null && !d.title.includes('$') ? `<span class="tt-deal-price">$${d.price % 1 ? d.price.toFixed(2) : d.price}</span>` : ''}
       </div>
       ${place && linkPlace ? `<button type="button" class="tt-deal-place" data-open="${esc(place.id)}">${esc(place.name)}</button>` : ''}
-      <p class="tt-deal-meta">${showDays ? `<span>${esc(dealDays(d.days))}</span>` : ''}<span>${esc(WHERE_LABEL[d.where])}</span></p>
+      <p class="tt-deal-meta">${showDays ? `<span>${esc(dealDays(d.days, d.where))}</span>` : ''}<span>${esc(WHERE_LABEL[d.where])}</span></p>
       ${app ? `<a class="tt-link tt-deal-out" href="${esc(dealAppUrl(d, place?.name))}" target="_blank" rel="noopener">Check the price on ${esc(WHERE_LABEL[d.where])}<span class="tt-visually-hidden"> (opens in a new tab)</span></a>` : ''}
       <p class="tt-deal-checked">${d.sample && d.lastChecked ? 'Sample. ' : ''}${dealChecked(d)}</p>
     </article>`;
@@ -135,6 +190,7 @@ const UI = (() => {
         <h3 class="tt-card-name"><button type="button" class="tt-card-link" data-open="${esc(r.id)}">${esc(r.name)}</button></h3>
         ${dataRow(r)}
         ${dishes(r)}
+        ${friendRating(r)}
       </div>
     </article>`;
   }
@@ -148,6 +204,7 @@ const UI = (() => {
     if (r.terp.checkIns > 0) {
       return `<div class="tt-checkin is-done">
         <span class="tt-checkin-text">✓ You checked in ${r.terp.lastCheckIn ? esc(formatDay(r.terp.lastCheckIn).replace(/^Today$/, 'today')) : ''}</span>
+        ${r.terp.myReview ? '' : '<button type="button" class="tt-link" data-action="review" aria-controls="detail-review">Rate it</button>'}
         <button type="button" class="tt-link" data-action="uncheckin">Remove check-in</button>
       </div>`;
     }
@@ -164,12 +221,22 @@ const UI = (() => {
       (t.waitNote || t.waitMinutes) && ['Wait', t.waitNote || `About ${t.waitMinutes} min`],
       t.priceRange && ['Typical price', t.priceRange],
     ].filter(Boolean);
+    // Order: your review, friends who've been, then the student review. A review by a friend
+    // is already shown with their visit, so the student section only shows non-friends.
     const rv = t.review;
-    const review = rv ? `<section class="tt-dsec">
-        <h2 class="tt-dsec-title">${rv.isFriend ? 'From your friends' : 'Student review'}</h2>
+    const mine = t.myReview ? `<section class="tt-dsec">
+        <h2 class="tt-dsec-title">Your review</h2>
+        ${activityItem({ who: { id: 'me', name: 'You' }, place: r, rating: t.myReview.rating, got: t.myReview.got, note: t.myReview.note, at: t.myReview.date }, { showPlace: false })}
+      </section>` : '';
+    const friends = t.friendReviews?.length ? `<section class="tt-dsec">
+        <h2 class="tt-dsec-title">Friends who’ve been</h2>
+        <div class="tt-activity-list">${t.friendReviews.map(a => activityItem({ ...a, place: r }, { showPlace: false })).join('')}</div>
+      </section>` : '';
+    const review = rv && !rv.isFriend ? `<section class="tt-dsec">
+        <h2 class="tt-dsec-title">Student review</h2>
         <blockquote class="tt-quote">
           <p>“${esc(rv.quote)}”</p>
-          <footer>${rv.isFriend ? `<span class="tt-avatar" style="background:${avatarColor(rv.author)}" aria-hidden="true">${esc(initials(rv.author))}</span>` : ''}${esc(rv.author)}, ${rv.authorCheckIns} ${rv.authorCheckIns === 1 ? 'check-in' : 'check-ins'}</footer>
+          <footer>${esc(rv.author)}, ${rv.authorCheckIns} ${rv.authorCheckIns === 1 ? 'check-in' : 'check-ins'}</footer>
         </blockquote>
       </section>` : '';
     return `<article class="tt-detail">
@@ -184,11 +251,15 @@ const UI = (() => {
         <div class="tt-detail-actions">
           ${saveTextButton(r)}
           <button type="button" class="tt-btn" data-action="vote">Add to group vote</button>
+          <button type="button" class="tt-btn" data-action="review" aria-expanded="false" aria-controls="detail-review">${t.myReview ? 'Edit your review' : '★ Rate it'}</button>
         </div>
+        <div id="detail-review" hidden></div>
         <div id="detail-checkin">${checkInBlock(r)}</div>
         <div class="tt-detail-cols">
           <div>
             ${t.highlights?.length ? `<section class="tt-dsec"><h2 class="tt-dsec-title">What to order</h2>${dishes(r, { large: true })}</section>` : ''}
+            ${mine}
+            ${friends}
             ${review}
             ${t.menu ? `<section class="tt-dsec"><h2 class="tt-dsec-title">On the menu</h2><p class="tt-dtext">${esc(t.menu)}</p></section>` : ''}
           </div>
@@ -301,7 +372,8 @@ const UI = (() => {
   }
 
   return { esc, price, walkMinutes, walkLabel, miles, avatarColor, initials,
-    photoTile, openStatus, dishes, dealItem, dealTag, dealDays, dayName, card, setSaveButton, saveTextButton, chip, formatDay,
+    photoTile, openStatus, dishes, dealItem, dealTag, dealDays, dayName, card,
+    stars, friendRating, timeAgo, activityItem, reviewForm, setSaveButton, saveTextButton, chip, formatDay,
     detail, detailSkeleton, checkInBlock, backButton, scoreboard, voteStatus,
     skeletonCards, emptyState, errorState, mount };
 })();

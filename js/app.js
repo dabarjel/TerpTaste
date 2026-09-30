@@ -48,7 +48,7 @@ document.addEventListener('click', e=>{
 });
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
-const pages = ['home','filter','group','deals','saved','profile'];
+const pages = ['home','filter','crew','deals','saved','profile'];
 const activePanel = () => (document.querySelector('.panel.active')?.id || '').replace('panel-','');
 const scrollMemory = {};
 
@@ -63,7 +63,8 @@ function highlightNav(id){
   });
 }
 // restoreScroll: return to where the user was on that screen (used by Back from detail).
-function go(id, { restoreScroll = false } = {}) {
+// section: id of a section to scroll to once the screen has rendered.
+function go(id, { restoreScroll = false, section = null } = {}) {
   const scroller = document.getElementById('main-scroll');
   showPanel(id);
   highlightNav(id);
@@ -73,14 +74,14 @@ function go(id, { restoreScroll = false } = {}) {
   if(id==='filter') renderFilterPanel();
   if(id==='saved') rendering = renderSaved();
   if(id==='profile') rendering = renderProfile();
-  if(id==='group') renderGroup();
-  if(id==='friends') syncAllSaveButtons();
+  if(id==='crew') rendering = renderCrew();
   if(id==='deals') rendering = renderDeals();
   if(restoreScroll){
     const y = scrollMemory[id] || 0;
     // The list is in the DOM once rendering resolves, so the position can be set right away.
     Promise.resolve(rendering).then(()=>{ if(activePanel()===id) scroller.scrollTop = y; });
   }
+  if(section) Promise.resolve(rendering).then(()=>document.getElementById(section)?.scrollIntoView({ block:'start' }));
 }
 
 
@@ -232,7 +233,12 @@ function renderHome() {
     const more = list.slice(3, list.length>6?9:list.length);
     const worth = list.filter(r=>r.distanceMiles>1).slice(0,4);
 
+    // Friends' top-rated spots first; hidden when no friend has rated anything 4+.
+    const loved = list.filter(r=>r.terp.friendRating && r.terp.friendRating.avg>=4)
+      .sort((a,b)=>b.terp.friendRating.avg-a.terp.friendRating.avg || b.terp.friendRating.count-a.terp.friendRating.count).slice(0,6);
+
     let h = '';
+    if(loved.length) h += `<div class="slabel">Your friends love</div><div class="mrow">${loved.map(r=>UI.card(r,{compact:true})).join('')}</div>`;
     h += `<div class="slabel">For You — based on your preferences</div>${grid(forYou)}`;
     if(budget.length) h += `<div class="slabel">Budget picks · Under $15</div><div class="mrow">${budget.map(r=>UI.card(r,{compact:true})).join('')}</div>`;
     if(more.length) h += `<div class="slabel">More nearby</div>${grid(more)}`;
@@ -260,7 +266,7 @@ document.getElementById('filter-clear').addEventListener('click', ()=>clearAllFi
 document.getElementById('filter-apply').addEventListener('click', ()=>go('home'));
 
 // ── DETAIL ────────────────────────────────────────────────────────────────────
-const BACK_LABELS = { home:'Back to Discover', saved:'Back to Saved', friends:'Back to Friends', deals:'Back to Deals', group:'Back to Group vote', profile:'Back to Profile', filter:'Back to Filter' };
+const BACK_LABELS = { home:'Back to Discover', saved:'Back to Saved', crew:'Back to Crew', deals:'Back to Deals', profile:'Back to Profile', filter:'Back to Filter' };
 let detailFrom = 'home';
 let detailReq = 0;
 
@@ -288,13 +294,66 @@ async function showDetail(key) {
   }
   clearTimeout(t);
   if(req!==detailReq) return;
-  UI.mount(root, UI.detail(r, { backLabel }), {
-    ...handlers,
+  renderDetailContent(r);
+}
+function renderDetailContent(r){
+  UI.mount(document.getElementById('detail-root'), UI.detail(r, { backLabel: BACK_LABELS[detailFrom] || 'Back' }), {
+    back: goBack,
     vote: ()=>suggestToGroup(r),
+    review: ()=>toggleReviewForm(r),
   });
   bindCheckIn(r);
 }
+// Re-render the open detail page in place (after a review), keeping the scroll position.
+async function refreshDetail(id){
+  const scroller = document.getElementById('main-scroll');
+  const y = scroller.scrollTop;
+  const r = await TerpData.getRestaurant(id);
+  if(activePanel()!=='detail') return;
+  renderDetailContent(r);
+  scroller.scrollTop = y;
+}
 function goBack(){ go(detailFrom, { restoreScroll:true }); }
+
+// ── QUICK REVIEW ──────────────────────────────────────────────────────────────
+// Stars, what you got (menu pick or typed), optional one line. The dish feeds highlights.
+function toggleReviewForm(r){
+  const box = document.getElementById('detail-review');
+  if(!box.hidden){ closeReviewForm(); return; }
+  UI.mount(box, UI.reviewForm(r), { 'cancel-review': closeReviewForm });
+  box.hidden = false;
+  document.querySelectorAll('#detail-root [data-action="review"]').forEach(b=>b.setAttribute('aria-expanded','true'));
+  const form = box.querySelector('form');
+  const got = form.elements.got;
+  const err = form.querySelector('.tt-form-error');
+  const syncDishes = ()=>box.querySelectorAll('[data-dish]').forEach(ch=>ch.setAttribute('aria-pressed', ch.dataset.dish===got.value.trim()));
+  box.querySelectorAll('[data-dish]').forEach(ch=>ch.addEventListener('click', ()=>{ got.value = ch.dataset.dish; syncDishes(); }));
+  got.addEventListener('input', syncDishes);
+  form.addEventListener('submit', e=>{
+    e.preventDefault();
+    const rating = Number(form.elements.rating.value);
+    const fail = (msg, el)=>{ err.textContent = msg; err.hidden = false; el.focus(); };
+    if(!rating) return fail('Pick a star rating.', form.querySelector('input[name="rating"]'));
+    if(!got.value.trim()) return fail('Add what you got: pick it from the menu or type it.', got);
+    const res = TerpData.saveReview(r.id, { rating, got: got.value, note: form.elements.note.value });
+    if(!res.ok) return fail('That review couldn’t be saved. Check the rating and dish, then try again.', got);
+    refreshDetail(r.id);
+    showToast(res.previous ? `Updated your review of ${r.name}` : `Posted your review of ${r.name}`, { action:{ label:'Undo', run:()=>{
+      TerpData.restoreReview(r.id, res.previous);
+      if(activePanel()==='detail') refreshDetail(r.id);
+      if(activePanel()==='crew') renderCrewActivity();
+    }}});
+  });
+  (form.querySelector('input[name="rating"]:checked') || form.querySelector('input[name="rating"]')).focus();
+}
+function closeReviewForm(){
+  const box = document.getElementById('detail-review');
+  if(!box) return;
+  box.hidden = true; box.innerHTML = '';
+  const btn = document.querySelector('#detail-root .tt-detail-actions [data-action="review"]');
+  document.querySelectorAll('#detail-root [data-action="review"]').forEach(b=>b.setAttribute('aria-expanded','false'));
+  btn?.focus();
+}
 
 function suggestToGroup(r){ addToVote(r.id, r.name); }
 
@@ -308,6 +367,7 @@ function bindCheckIn(r){
   const el = document.getElementById('detail-checkin');
   if(!el) return;
   UI.mount(el, UI.checkInBlock(r), {
+    review: ()=>toggleReviewForm(r),
     checkin: ()=>{
       TerpData.addCheckIn(r.id);
       refreshCheckIn(r.id);
@@ -353,7 +413,9 @@ function renderDeals(){
       return;
     }
     const days = weekFromToday().map((day, i)=>({ day, i, list: deals.filter(d=>d.days.includes(day)) })).filter(g=>g.list.length);
-    const noDays = deals.filter(d=>!d.days.length);
+    // No set days: app deals go under Check the app; in-store ones under Days not listed.
+    const checkApp = deals.filter(d=>!d.days.length && d.where!=='in-store');
+    const noDays = deals.filter(d=>!d.days.length && d.where==='in-store');
     const section = (title, list, id) => `<section class="tt-deal-day" aria-labelledby="${id}">
         <h2 class="tt-deal-day-title" id="${id}">${title}</h2>
         <div class="tt-deal-list">${list.map(d=>UI.dealItem(d, { place:d.place, showDays:false })).join('')}</div>
@@ -361,6 +423,7 @@ function renderDeals(){
     const todayEmpty = days[0]?.i === 0 ? '' : `<section class="tt-deal-day"><h2 class="tt-deal-day-title">Today, ${UI.dayName(TerpData.todayKey())}</h2><p class="tt-fhint">No deals today.</p></section>`;
     el.innerHTML = `<div class="tt-deals">${sampleNote(deals)}${todayEmpty}${
       days.map(g=>section(g.i===0 ? `Today, ${UI.dayName(g.day)}` : UI.dayName(g.day), g.list, `deal-day-${g.day}`)).join('')}${
+      checkApp.length ? section('Check the app', checkApp, 'deal-day-app') : ''}${
       noDays.length ? section('Days not listed', noDays, 'deal-day-none') : ''}</div>`;
   }, renderDeals, UI.skeletonCards(2));
 }
@@ -388,6 +451,26 @@ function renderSaved() {
   }, renderSaved, UI.skeletonCards(2));
 }
 
+
+// ── CREW (friend activity on top, group vote below) ──────────────────────────
+function renderCrew(){
+  const activity = renderCrewActivity();
+  renderGroup();
+  return activity;
+}
+let crewReq = 0;
+function renderCrewActivity(){
+  const req = ++crewReq;
+  const el = document.getElementById('crew-activity');
+  return withLoading(el, TerpData.getActivity(), list=>{
+    if(req!==crewReq) return;
+    if(!list.length){
+      UI.mount(el, UI.emptyState({ title:'No friend activity yet', body:'When friends rate a spot, it shows up here. Rate the spots you’ve been to from their page.', action:{ label:'Browse spots', name:'browse' } }), { browse: ()=>go('home') });
+      return;
+    }
+    el.innerHTML = `<div class="tt-activity-list">${list.slice(0, 20).map(a=>UI.activityItem(a, { actions:true })).join('')}</div>`;
+  }, renderCrewActivity, UI.skeletonCards(1));
+}
 
 // ── GROUP VOTE ────────────────────────────────────────────────────────────────
 // All spots come from TerpData; the board and picker re-render from TerpData.getVote().
@@ -435,9 +518,9 @@ function refreshVote(){ renderVoteBoard(); renderPicker(); }
 
 function addToVote(id, name){
   const added = TerpData.addVoteOption(id);
-  if(activePanel()==='group') refreshVote();
+  if(activePanel()==='crew') refreshVote();
   showToast(added ? `Added ${name} to the group vote` : `${name} is already in the group vote`,
-    activePanel()==='group' ? {} : { action:{ label:'View vote', run:()=>go('group') } });
+    activePanel()==='crew' ? {} : { action:{ label:'View vote', run:()=>go('crew', { section:'crew-vote' }) } });
 }
 function removeFromVoteWithUndo(id){
   const name = allSpots?.find(r=>r.id===id)?.name || 'Spot';

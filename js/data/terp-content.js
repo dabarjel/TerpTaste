@@ -4,8 +4,9 @@
 // highlights: up to 3 dishes the student review specifically recommends (all on the menu);
 // empty when the review names no dish.
 // deals: weekly deals at this spot. Each has id, title, price (number or null), days
-// ('sun'..'sat'), where ('in-store' | 'uber-eats' | 'doordash'), lastChecked
-// ('YYYY-MM-DD' or null if nobody has checked it yet), and sample (true until confirmed).
+// ('sun'..'sat'; empty = no set days, shown under "Check the app"), where ('in-store' |
+// 'uber-eats' | 'doordash'), lastChecked ('YYYY-MM-DD', or null if nobody has checked it
+// yet), and sample (true until confirmed).
 const TERP_CONTENT = {
   "habanero": {"studentTags":["mexican","sitdown","vegan","halal"],"badge":"⭐ Michelin Bib","hoursNote":"Open til 10pm","waitMinutes":10,"waitNote":null,"priceRange":"$10–$18","review":{"quote":"Best tacos near campus, not even close. Al pastor, tinga, and polpo (octopus) are all elite. Michelin Bib Gourmand — for real.","author":"Jordan T.","authorCheckIns":6,"isFriend":true},"highlights":["Tacos al pastor","Tinga","Polpo"],"menu":"Tacos al pastor, tinga, lengua, polpo. Burritos, enchiladas, guacamole. Agua fresca. Free chips first order.","dietNotes":["Vegetarian tacos available","Vegan options","Gluten-free tortilla on request"]},
   "aroy": {"studentTags":["asian","fast","vegan"],"badge":"🌶 Hidden gem","hoursNote":"Open til 8:30pm","waitMinutes":10,"waitNote":null,"priceRange":"$10–$14","review":{"quote":"A tiny spot on College Ave that gets overlooked — do not sleep on it. Drunken noodles at spice 3 is a rite of passage. Huge portions.","author":"Aisha K.","authorCheckIns":4,"isFriend":true},"highlights":["Drunken noodles"],"menu":"Drunken noodles, Pad Thai, Pad See Ew, green/red curry, pineapple fried rice, larb gai.","dietNotes":["Vegetarian-friendly","Vegan on request"]},
@@ -28,14 +29,13 @@ const TERP_CONTENT = {
   "franklinsbeer": {"studentTags":["sitdown","late"],"badge":"🍺 Craft beer + pizza","hoursNote":"Open late","waitMinutes":null,"waitNote":"Sit-down","priceRange":"$15–$25","review":{"quote":"Good beer, good pizzas, great bratwurst. The gift shop has craft beer, hot sauces, and mead. Better when you're 21.","author":"JimJamb0rino","authorCheckIns":4,"isFriend":false},"highlights":["Pizza","Bratwurst"],"menu":"Artisan pizza, bratwurst, burgers, craft beer. Gift shop with hot sauces, mead, candy.","dietNotes":["Vegetarian pizza available"]},
   "northwest": {"studentTags":["asian","fast"],"badge":"🥢 Cold noodles","hoursNote":"Open til 8pm","waitMinutes":10,"waitNote":null,"priceRange":"$9–$14","review":{"quote":"Amazing cold noodles — genuinely unlike anything else on Route 1. Super underrated Chinese spot.","author":"Striking-Safe-3103","authorCheckIns":2,"isFriend":false},"highlights":["Cold noodles"],"menu":"Cold noodles, dumplings, braised pork rice, mapo tofu, scallion pancake.","dietNotes":["Vegetarian dumplings","Vegan noodles"]},
   "latao": {"studentTags":["asian","sitdown"],"badge":"🫕 Hot pot","hoursNote":"Open til 10pm","waitMinutes":30,"waitNote":null,"priceRange":"$25–$45","review":{"quote":"Pricey but all hot pot is great. The sushi side is actually affordable. Good for a special dinner.","author":"JimJamb0rino","authorCheckIns":2,"isFriend":false},"highlights":["Hot pot"],"menu":"All-you-can-eat hot pot, sushi, Korean BBQ fusion. Premium broth options.","dietNotes":["Vegan broth available","Gluten-free dipping options"]},
-  "eddiescafe": {"studentTags":["asian","fast"],"badge":"🍊 Off Rhode Island","hoursNote":"Open til 8pm","waitMinutes":10,"waitNote":null,"priceRange":"$8–$14","review":{"quote":"Orange chicken, fried rice — all the classics done well. Off Rhode Island Ave, slightly off the beaten path but worth it.","author":"fifapotato88","authorCheckIns":2,"isFriend":false},"highlights":["Orange chicken","Fried rice"],"menu":"Orange chicken, fried rice, lo mein, beef with broccoli, spring rolls.","dietNotes":["Vegetarian fried rice"]}
+  "eddiescafe": {"studentTags":["asian","fast"],"badge":"🍊 Off Rhode Island","hoursNote":"Open til 8pm","waitMinutes":10,"waitNote":null,"priceRange":"$8–$14","review":{"quote":"Orange chicken, fried rice — all the classics done well. Off Rhode Island Ave, slightly off the beaten path but worth it.","author":"fifapotato88","authorCheckIns":2,"isFriend":false},"highlights":["Orange chicken","Fried rice"],"menu":"Orange chicken, fried rice, lo mein, beef with broccoli, spring rolls.","dietNotes":["Vegetarian fried rice"]},
+  "fiveguys": {"studentTags":["fast"],"highlights":[],"deals":[{"id":"fiveguys-bogo-ubereats","title":"Buy one, get one","price":null,"days":[],"where":"uber-eats","lastChecked":null,"sample":true}]}
 };
 
 // Sample deals that aren't linked to a place yet, so they aren't shown anywhere.
 // Each needs a place id before it can move into TERP_CONTENT above:
-//  - Five Guys isn't one of the places in the data yet, and its days weren't given.
 //  - The cheesesteak deal was given without the spot's name.
 const TERP_DEALS_UNLINKED = [
-  {"placeName":"Five Guys","deal":{"id":"fiveguys-bogo-ubereats","title":"Buy one, get one","price":null,"days":[],"where":"uber-eats","lastChecked":null,"sample":true}},
   {"placeName":null,"deal":{"id":"cheesesteak-tue","title":"$7 cheesesteak sub","price":7,"days":["tue"],"where":"in-store","lastChecked":null,"sample":true}}
 ];

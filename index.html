@@ -27,9 +27,9 @@
       <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 5h16M6 11h10M9 17h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span>Filter</span>
     </button>
-    <button type="button" class="snav" id="sb-group" data-nav="group">
+    <button type="button" class="snav" id="sb-crew" data-nav="crew">
       <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <span>Group Vote</span>
+      <span>Crew</span>
     </button>
     <button type="button" class="snav" id="sb-deals" data-nav="deals">
       <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 11.2V4a1 1 0 011-1h7.2a1 1 0 01.7.3l7 7a1 1 0 010 1.4l-7.2 7.2a1 1 0 01-1.4 0l-7-7a1 1 0 01-.3-.7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
@@ -87,9 +87,16 @@
       </div>
 
       <!-- GROUP -->
-      <div class="panel" id="panel-group">
-        <div class="ph"><div><div class="ph-title">Group Vote</div><div class="ph-sub">Everyone taps their pick. The result is final once everyone has voted.</div></div></div>
-        <div class="tt-group">
+      <!-- CREW: friend activity + group vote -->
+      <div class="panel" id="panel-crew">
+        <div class="ph"><div><div class="ph-title">Crew</div><div class="ph-sub">Where your friends have been, and where you’re all going next.</div></div></div>
+        <section class="tt-crew-section" aria-labelledby="crew-activity-title">
+          <div class="tt-section-head"><h2 class="tt-section-title" id="crew-activity-title">Friend activity</h2></div>
+          <div id="crew-activity"></div>
+        </section>
+        <section class="tt-crew-section" id="crew-vote" aria-labelledby="crew-vote-title">
+          <div class="tt-section-head"><h2 class="tt-section-title" id="crew-vote-title">Group vote</h2><p class="tt-section-sub">Everyone taps their pick. The result is final once everyone has voted.</p></div>
+          <div class="tt-group">
           <div id="vote-board" aria-live="polite"></div>
           <div class="tt-group-side">
             <section class="tt-picker" aria-labelledby="picker-title">
@@ -104,20 +111,7 @@
             </section>
           </div>
         </div>
-      </div>
-
-      <!-- FRIENDS -->
-      <div class="panel" id="panel-friends">
-        <div class="ph"><div><div class="ph-title">Friends Feed</div><div class="ph-sub">Real check-ins from people you actually know — no bots, no fake reviews</div></div></div>
-        <div style="height:14px;"></div>
-        <div class="fgrid">
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-red);">JT</div><div><div class="fwho">Jordan T.</div><div class="fwhen">2 hours ago</div></div></div><div class="frest">Taqueria Habanero</div><div class="fquote">"Al pastor and a hibiscus agua fresca — that's the move. Michelin for a reason."</div><div class="factions"><button type="button" class="fa" data-save="habanero" data-name="Taqueria Habanero" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><button type="button" class="fa" data-vote-add="habanero" data-name="Taqueria Habanero">Add to group vote</button></div></div>
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-blue);">AK</div><div><div class="fwho">Aisha K.</div><div class="fwhen">Yesterday · 7pm</div></div></div><div class="frest">Aroy Thai</div><div class="fquote">"Got the drunken noodles on 3-star spice. Do NOT underestimate it. So good though."</div><div class="factions"><button type="button" class="fa" data-save="aroy" data-name="Aroy Thai" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><button type="button" class="fa" data-vote-add="aroy" data-name="Aroy Thai">Add to group vote</button></div></div>
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-green);">MR</div><div><div class="fwho">Marcus R.</div><div class="fwhen">2 days ago</div></div></div><div class="frest">Shagga Ethiopian</div><div class="fquote">"Ubered over and split the combo platter with 2 friends. $16 each, stuffed. Go."</div><div class="factions"><button type="button" class="fa" data-save="shagga" data-name="Shagga Ethiopian" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><button type="button" class="fa" data-vote-add="shagga" data-name="Shagga Ethiopian">Add to group vote</button></div></div>
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-purple);">SP</div><div><div class="fwho">Simone P.</div><div class="fwhen">3 days ago</div></div></div><div class="frest">Marathon Deli</div><div class="fquote">"Marathon fries at midnight after studying. Classic. $4. They never miss."</div><div class="factions"><button type="button" class="fa" data-save="marathon" data-name="Marathon Deli" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><button type="button" class="fa" data-vote-add="marathon" data-name="Marathon Deli">Add to group vote</button></div></div>
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-orange);">KB</div><div><div class="fwho">Kevin B.</div><div class="fwhen">4 days ago</div></div></div><div class="frest">Raising Cane's</div><div class="fquote">"Three Finger Combo after lecture. Cane's sauce goes crazy. Always a line but worth the 8 minutes."</div><div class="factions"><button type="button" class="fa" data-save="canes" data-name="Raising Cane's" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><button type="button" class="fa" data-vote-add="canes" data-name="Raising Cane's">Add to group vote</button></div></div>
-          <div class="fitem"><div class="ftop"><div class="fpfp" style="background:var(--avatar-teal);">PR</div><div><div class="fwho">Priya R.</div><div class="fwhen">5 days ago</div></div></div><div class="frest">Spice 6</div><div class="fquote">"Naan pizza with tikka masala. $14 and you'll be full for the rest of the day."</div><div class="factions"><button type="button" class="fa" data-save="spice6" data-name="Spice 6" data-style="text" data-off-label="♡ Save spot" aria-pressed="false">♡ Save spot</button><button type="button" class="fa" data-vote-add="spice6" data-name="Spice 6">Add to group vote</button></div></div>
-        </div>
+        </section>
       </div>
 
       <!-- DEALS -->
@@ -173,7 +167,7 @@
       <div class="mobile-nav-inner">
         <button type="button" class="nitem" id="mn-home" data-nav="home"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H14v-5H8v5H4a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nlabel">Home</span></button>
         <button type="button" class="nitem" id="mn-filter" data-nav="filter"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 5h16M6 11h10M9 17h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Filter</span></button>
-        <button type="button" class="nitem" id="mn-group" data-nav="group"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Group</span></button>
+        <button type="button" class="nitem" id="mn-crew" data-nav="crew"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Crew</span></button>
         <button type="button" class="nitem" id="mn-deals" data-nav="deals"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 11.2V4a1 1 0 011-1h7.2a1 1 0 01.7.3l7 7a1 1 0 010 1.4l-7.2 7.2a1 1 0 01-1.4 0l-7-7a1 1 0 01-.3-.7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg><span class="nlabel">Deals</span></button>
         <button type="button" class="nitem" id="mn-saved" data-nav="saved"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 17.5l-7-5.5a4 4 0 015.6-5.6L11 8l1.4-1.6A4 4 0 0118 12l-7 5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nlabel">Saved</span></button>
         <button type="button" class="nitem" id="mn-profile" data-nav="profile"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 19c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Profile</span></button>
@@ -184,6 +178,7 @@
 
 <script src="js/data/mock-places.js"></script>
 <script src="js/data/terp-content.js"></script>
+<script src="js/data/mock-friends.js"></script>
 <script src="js/data/restaurants.js"></script>
 <script src="js/ui/components.js"></script>
 <script src="js/app.js"></script>

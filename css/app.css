@@ -39,20 +39,6 @@ html,body{height:100%;font-family:var(--f-body);background:var(--bg-page);color:
 .mrow::-webkit-scrollbar{display:none;}
 .abtn{border-radius:10px;padding:11px 18px;font-family:var(--f-body);font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface-2);color:var(--text-primary);}
 .abtn:hover{border-color:var(--border-strong);}
-.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:0 28px 28px;}
-.fitem{background:var(--surface-1);border-radius:14px;border:1px solid var(--border);padding:14px;}
-.ftop{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
-.fpfp{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-primary);flex-shrink:0;}
-.fwho{font-size:13px;font-weight:600;color:var(--text-primary);}
-.fwhen{font-size:11px;color:var(--text-muted);}
-.frest{font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:4px;}
-.fquote{font-size:12px;color:var(--text-secondary);line-height:1.5;}
-.factions{display:flex;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
-.fa{font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;}
-button.fa{background:none;border:0;padding:0;font:inherit;}
-.fa[aria-pressed="true"]{color:var(--terp-red);}
-.fa.fire{color:var(--terp-red);}
-.fa:hover{color:var(--text-primary);}
 .playout{display:grid;grid-template-columns:240px 1fr;gap:24px;padding:24px 28px;align-items:start;}
 .pcard{background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;}
 .pavatar{width:72px;height:72px;border-radius:50%;background:var(--terp-red);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--text-primary);margin:0 auto 12px;}
@@ -79,6 +65,5 @@ button.fa{background:none;border:0;padding:0;font:inherit;}
   .slabel{padding:14px 16px 8px;}
   .cgrid{grid-template-columns:1fr;padding:0 16px 8px;gap:10px;}
   .mrow{padding:0 16px;}
-  .fgrid{grid-template-columns:1fr;padding:0 16px 16px;}
   .playout{grid-template-columns:1fr;padding:16px;}
 }

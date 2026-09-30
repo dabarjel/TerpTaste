@@ -11,7 +11,8 @@
 //     distanceMiles   straight-line miles from campus (from location, or the mock value)
 //   TerpTaste-only (never from Google), under .terp
 //     saved, checkIns, groupVotes, studentTags,
-//     highlights (up to 3 standout dishes), deals (weekly), dealsToday, badge,
+//     highlights (up to 3: dishes friends rated 4+, then curated), menuItems, deals
+//     (weekly), dealsToday, friendReviews, friendRating {avg,count} or null, myReview, badge,
 //     hoursNote, waitMinutes, waitNote,
 //     priceRange, review, menu, dietNotes
 //
@@ -66,6 +67,22 @@ const TerpData = (() => {
     saved: new Set(),
     checkIns: [],                                    // [{id, date}], newest first
     session: emptySession(),
+    reviews: {},                                     // placeId → {rating, got, note, date}
+  };
+
+  // ── Friends (mock until there are accounts; see js/data/mock-friends.js) ────
+  const FRIENDS = typeof MOCK_FRIENDS !== 'undefined' ? MOCK_FRIENDS : [];
+  const friendById = new Map(FRIENDS.map(f => [f.id, f]));
+  const loadedAt = Date.now();
+  const FRIEND_ACTIVITY = (typeof MOCK_FRIEND_ACTIVITY !== 'undefined' ? MOCK_FRIEND_ACTIVITY : [])
+    .filter(a => friendById.has(a.friend) && a.rating >= 1 && a.rating <= 5)
+    .map(a => ({ who: friendById.get(a.friend), placeId: a.placeId, rating: a.rating, got: a.got || '', note: a.note || '',
+                 at: new Date(loadedAt - a.hoursAgo * 3600e3).toISOString() }));
+  const cleanReview = (r) => {
+    const rating = Math.round(Number(r && r.rating));
+    const got = String((r && r.got) || '').trim().slice(0, 60);
+    if (!(rating >= 1 && rating <= 5) || !got) return null;
+    return { rating, got, note: String(r.note || '').trim().slice(0, 140), date: typeof r.date === 'string' ? r.date : new Date().toISOString() };
   };
 
   function loadUser() {
@@ -84,10 +101,13 @@ const TerpData = (() => {
       MEMBERS.forEach(m => { const v = s.votes && s.votes[m.id]; if (isStr(v) && ids.has(v)) votes[m.id] = v; });
       user.session = { name: isStr(s.name) ? s.name : 'Friday dinner', options, votes };
     }
+    if (data.reviews && typeof data.reviews === 'object') {
+      Object.entries(data.reviews).forEach(([id, r]) => { const c = cleanReview(r); if (c) user.reviews[id] = c; });
+    }
   }
   function persist() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ saved: [...user.saved], checkIns: user.checkIns, session: user.session }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ saved: [...user.saved], checkIns: user.checkIns, session: user.session, reviews: user.reviews }));
     } catch (_) { /* storage unavailable: keep in-memory state */ }
   }
   loadUser();
@@ -110,9 +130,43 @@ const TerpData = (() => {
     return 2 * R * Math.asin(Math.sqrt(h));
   }
 
+  // Menu text → pickable items. Splits on commas and periods, but not inside parentheses.
+  function menuItems(menu) {
+    if (!menu) return [];
+    const out = []; let cur = '', depth = 0;
+    for (const ch of menu) {
+      if (ch === '(') depth++;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if ((ch === ',' || ch === '.') && depth === 0) { out.push(cur); cur = ''; } else cur += ch;
+    }
+    out.push(cur);
+    return [...new Set(out.map(s => s.trim()).filter(s => s && s.length <= 60)
+      .map(s => s[0].toUpperCase() + s.slice(1)))];
+  }
+
+  // Standout dishes: dishes friends (and you) got and rated 4+, most mentioned first,
+  // then the curated review picks. Case-insensitive, capped at 3.
+  function mergeHighlights(curated, reviews) {
+    const counts = new Map();
+    reviews.filter(r => r.rating >= 4 && r.got).forEach(r => {
+      const k = r.got.toLowerCase();
+      counts.set(k, { name: counts.get(k)?.name || r.got, n: (counts.get(k)?.n || 0) + 1 });
+    });
+    const community = [...counts.values()].sort((a, b) => b.n - a.n).map(x => x.name);
+    const seen = new Set(), out = [];
+    [...community, ...curated].forEach(d => { const k = d.toLowerCase(); if (!seen.has(k)) { seen.add(k); out.push(d); } });
+    return out.slice(0, 3);
+  }
+
   function toRestaurant(place) {
     const { _mockDistanceMiles, ...fields } = place;
     const content = TERP_CONTENT[place.id] || {};
+    const friendReviews = FRIEND_ACTIVITY.filter(a => a.placeId === place.id).sort((a, b) => b.at.localeCompare(a.at));
+    const myReview = user.reviews[place.id] || null;
+    const friendRating = friendReviews.length
+      ? { avg: Math.round(friendReviews.reduce((s, r) => s + r.rating, 0) / friendReviews.length * 10) / 10, count: friendReviews.length }
+      : null;
+    const curated = (content.highlights || []).filter(d => typeof d === 'string' && d.trim());
     const distanceMiles = place.location
       ? Math.round(milesBetween(CAMPUS, place.location) * 10) / 10
       : (_mockDistanceMiles ?? null);
@@ -127,7 +181,11 @@ const TerpData = (() => {
       terp: {
         studentTags: [],
         ...content,
-        highlights: (content.highlights || []).filter(d => typeof d === 'string' && d.trim()).slice(0, 3),
+        highlights: mergeHighlights(curated, [...friendReviews, ...(myReview ? [myReview] : [])]),
+        menuItems: menuItems(content.menu),
+        friendReviews,                                // newest first
+        friendRating,                                 // {avg, count} or null when no friend has rated it
+        myReview,
         deals: (content.deals || []).map(normDeal).filter(Boolean),
         dealsToday: (content.deals || []).map(normDeal).filter(d => d && d.days.includes(todayKey())),
         saved: user.saved.has(place.id),
@@ -149,7 +207,8 @@ const TerpData = (() => {
   //   maxDistanceMiles number
   //   query          string    matches name, cuisine, menu
   //   savedOnly      boolean
-  //   sort           'distance' | undefined (source order)
+  //   friendsLove    boolean   friends rated it 4+ on average
+  //   sort           'distance' | 'friends' (friend rating) | undefined (source order)
   async function getRestaurants(filters = {}) {
     let list = (await fetchPlaces()).map(toRestaurant);
     const f = filters;
@@ -164,12 +223,37 @@ const TerpData = (() => {
     if (f.cuisines?.length) list = list.filter(r => f.cuisines.includes(r.primaryTypeDisplayName));
     if (f.maxDistanceMiles != null) list = list.filter(r => r.distanceMiles != null && r.distanceMiles <= f.maxDistanceMiles);
     if (f.savedOnly) list = list.filter(r => r.terp.saved);
+    if (f.friendsLove) list = list.filter(r => r.terp.friendRating && r.terp.friendRating.avg >= 4);
     if (f.query) {
       const q = f.query.trim().toLowerCase();
       list = list.filter(r => [r.name, r.primaryTypeDisplayName, r.terp.menu].some(s => s && s.toLowerCase().includes(q)));
     }
     if (f.sort === 'distance') list = list.slice().sort((a, b) => (a.distanceMiles ?? Infinity) - (b.distanceMiles ?? Infinity));
+    if (f.sort === 'friends') list = list.slice().sort((a, b) =>
+      (b.terp.friendRating?.avg ?? 0) - (a.terp.friendRating?.avg ?? 0) || (b.terp.friendRating?.count ?? 0) - (a.terp.friendRating?.count ?? 0));
     return list;
+  }
+
+  // ── Reviews and activity ────────────────────────────────────────────────────
+  // Friends' visits plus your own reviews, newest first, each with its place attached.
+  async function getActivity() {
+    const byId = new Map((await fetchPlaces()).map(toRestaurant).map(r => [r.id, r]));
+    const mine = Object.entries(user.reviews).map(([placeId, r]) => ({ who: { id: 'me', name: 'You' }, placeId, rating: r.rating, got: r.got, note: r.note, at: r.date }));
+    return [...FRIEND_ACTIVITY, ...mine].filter(a => byId.has(a.placeId))
+      .sort((a, b) => b.at.localeCompare(a.at)).map(a => ({ ...a, place: byId.get(a.placeId) }));
+  }
+  // Save (or replace) your review. Returns the previous review so Undo can restore it.
+  function saveReview(placeId, review) {
+    const clean = cleanReview({ ...review, date: new Date().toISOString() });
+    if (!clean) return { ok: false };
+    const previous = user.reviews[placeId] || null;
+    user.reviews[placeId] = clean;
+    persist();
+    return { ok: true, previous };
+  }
+  function restoreReview(placeId, previous) {
+    if (previous) user.reviews[placeId] = previous; else delete user.reviews[placeId];
+    persist();
   }
 
   // What the current data can be filtered by, so the UI only offers options backed by data.
@@ -307,6 +391,7 @@ const TerpData = (() => {
   return {
     config,
     getRestaurants, getRestaurant, getFacets, getDeals, todayKey, DAYS,
+    getActivity, saveReview, restoreReview,
     toggleSaved, setSaved, savedIds, restoreSaved,
     addCheckIn, removeCheckIn, restoreCheckIn, checkInHistory,
     getVote, addVoteOption, removeVoteOption, restoreVoteOption, castVote, resetVote, restoreVote,
