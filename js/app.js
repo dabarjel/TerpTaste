@@ -206,7 +206,8 @@ function renderHome() {
   const req = ++homeReq;
   const el = document.getElementById('home-content');
   const active = hasActiveFilters();
-  return withLoading(el, TerpData.getRestaurants(active ? filterQuery() : {}), list=>{
+  // Nearest first either way, so the walk-time bands read top to bottom.
+  return withLoading(el, TerpData.getRestaurants(active ? filterQuery() : { sort:'distance' }), list=>{
     if(req!==homeReq) return; // a newer search or filter change won
     const q = filters.query.trim();
     if(!list.length){
@@ -218,33 +219,18 @@ function renderHome() {
       })}</div>`, { clear: ()=>clearAllFilters() });
       return;
     }
-    const grid = rs => `<div class="cgrid">${rs.map(r=>UI.card(r)).join('')}</div>`;
     if(active){
-      // One list, nearest first, each spot once.
+      // Search and filter results: a count, then the same walk-time bands.
       UI.mount(el, `<div class="tt-results-head">
-          <span class="tt-results-count">${list.length} ${list.length===1?'spot':'spots'}${q ? ` for “${UI.esc(q)}”` : ''}</span>
+          <span class="tt-results-count" role="status">${list.length} ${list.length===1?'spot':'spots'}${q ? ` for “${UI.esc(q)}”` : ''}</span>
           <button type="button" class="tt-link" data-action="clear">Clear filters</button>
-        </div>${grid(list)}<div style="height:20px;"></div>`, { clear: ()=>clearAllFilters() });
+        </div>${UI.walkSections(list)}<div class="tt-end"></div>`, { clear: ()=>clearAllFilters() });
       return;
     }
-    // No filters: section layout stays until Phase 4 replaces it with walk-time sections.
-    const forYou = list.slice(0,3);
-    const budget = list.filter(r=>r.priceLevel==='PRICE_LEVEL_INEXPENSIVE').slice(0,6);
-    const more = list.slice(3, list.length>6?9:list.length);
-    const worth = list.filter(r=>r.distanceMiles>1).slice(0,4);
-
-    // Friends' top-rated spots first; hidden when no friend has rated anything 4+.
+    // No filters: friends' top-rated spots (hidden when none), then every spot once by walk time.
     const loved = list.filter(r=>r.terp.friendRating && r.terp.friendRating.avg>=4)
       .sort((a,b)=>b.terp.friendRating.avg-a.terp.friendRating.avg || b.terp.friendRating.count-a.terp.friendRating.count).slice(0,6);
-
-    let h = '';
-    if(loved.length) h += `<div class="slabel">Your friends love</div><div class="mrow">${loved.map(r=>UI.card(r,{compact:true})).join('')}</div>`;
-    h += `<div class="slabel">For You — based on your preferences</div>${grid(forYou)}`;
-    if(budget.length) h += `<div class="slabel">Budget picks · Under $15</div><div class="mrow">${budget.map(r=>UI.card(r,{compact:true})).join('')}</div>`;
-    if(more.length) h += `<div class="slabel">More nearby</div>${grid(more)}`;
-    if(worth.length) h += `<div class="slabel">Worth the trip</div>${grid(worth)}`;
-    h += `<div style="height:20px;"></div>`;
-    el.innerHTML = h;
+    el.innerHTML = UI.cardRow('Your friends love', 'row-friends', loved) + UI.walkSections(list) + '<div class="tt-end"></div>';
   }, ()=>{ loadFacets(); renderHome(); });
 }
 
@@ -302,7 +288,6 @@ function renderDetailContent(r){
     vote: ()=>suggestToGroup(r),
     review: ()=>toggleReviewForm(r),
   });
-  bindCheckIn(r);
 }
 // Re-render the open detail page in place (after a review), keeping the scroll position.
 async function refreshDetail(id){
@@ -338,8 +323,10 @@ function toggleReviewForm(r){
     const res = TerpData.saveReview(r.id, { rating, got: got.value, note: form.elements.note.value });
     if(!res.ok) return fail('That review couldn’t be saved. Check the rating and dish, then try again.', got);
     refreshDetail(r.id);
-    showToast(res.previous ? `Updated your review of ${r.name}` : `Posted your review of ${r.name}`, { action:{ label:'Undo', run:()=>{
+    updateStats();
+    showToast(res.previous ? `Updated your review of ${r.name}` : `Posted: you went to ${r.name}`, { action:{ label:'Undo', run:()=>{
       TerpData.restoreReview(r.id, res.previous);
+      updateStats();
       if(activePanel()==='detail') refreshDetail(r.id);
       if(activePanel()==='crew') renderCrewActivity();
     }}});
@@ -350,36 +337,12 @@ function closeReviewForm(){
   const box = document.getElementById('detail-review');
   if(!box) return;
   box.hidden = true; box.innerHTML = '';
-  const btn = document.querySelector('#detail-root .tt-detail-actions [data-action="review"]');
+  const btn = document.querySelector('#detail-visit [data-action="review"]');
   document.querySelectorAll('#detail-root [data-action="review"]').forEach(b=>b.setAttribute('aria-expanded','false'));
   btn?.focus();
 }
 
 function suggestToGroup(r){ addToVote(r.id, r.name); }
-
-// Check-in block re-renders from saved data after every change.
-async function refreshCheckIn(id){
-  const r = await TerpData.getRestaurant(id);
-  bindCheckIn(r);
-  updateStats();
-}
-function bindCheckIn(r){
-  const el = document.getElementById('detail-checkin');
-  if(!el) return;
-  UI.mount(el, UI.checkInBlock(r), {
-    review: ()=>toggleReviewForm(r),
-    checkin: ()=>{
-      TerpData.addCheckIn(r.id);
-      refreshCheckIn(r.id);
-      showToast(`Checked in at ${r.name}`, { action:{ label:'Undo', run:()=>{ TerpData.removeCheckIn(r.id); refreshCheckIn(r.id); } } });
-    },
-    uncheckin: ()=>{
-      const removed = TerpData.removeCheckIn(r.id);
-      refreshCheckIn(r.id);
-      showToast(`Removed check-in at ${r.name}`, { action:{ label:'Undo', run:()=>{ TerpData.restoreCheckIn(removed); refreshCheckIn(r.id); } } });
-    },
-  });
-}
 
 // ── DEALS ─────────────────────────────────────────────────────────────────────
 // Week starting today, e.g. tue, wed, … mon.
@@ -447,7 +410,7 @@ function renderSaved() {
   }
   return withLoading(el, TerpData.getRestaurants({ids}), list=>{
     if(req!==savedReq) return;
-    el.innerHTML = `<div class="cgrid tt-saved-grid">${list.map(r=>UI.card(r)).join('')}</div><div style="height:20px;"></div>`;
+    el.innerHTML = `<div class="tt-saved"><div class="tt-grid">${list.map(r=>UI.card(r)).join('')}</div></div><div class="tt-end"></div>`;
   }, renderSaved, UI.skeletonCards(2));
 }
 
@@ -559,24 +522,37 @@ document.addEventListener('click', e=>{
 function renderProfile() {
   updateStats();
   const h = document.getElementById('visit-history');
-  const history = TerpData.checkInHistory();
-  if(!history.length){ h.innerHTML = `<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">No visits yet — check in after eating!</div>`; return; }
-  return withLoading(h, TerpData.getRestaurants({ids: history.map(c=>c.id)}), list=>{
+  // Visits = your reviews plus any check-ins saved before check-in merged into reviews.
+  const visits = TerpData.getVisits();
+  if(!visits.length){ h.innerHTML = `<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">No visits yet. Tap “I went here” on a spot after you eat there.</div>`; return; }
+  return withLoading(h, TerpData.getRestaurants({ids: visits.map(v=>v.id)}), list=>{
     const byId = new Map(list.map(r=>[r.id,r]));
-    h.innerHTML = history.map(c=>{ const r=byId.get(c.id); if(!r) return ''; return `<div class="hist"><div><div class="hname">${r.name}</div><div class="hsub">${r.primaryTypeDisplayName} · ${price(r)}</div></div><div class="hdate">${UI.formatDay(c.date)}</div></div>`; }).join('');
+    h.innerHTML = visits.map(v=>{
+      const r = byId.get(v.id); if(!r) return '';
+      const sub = v.rating ? `${UI.stars(v.rating)} <span>Got ${UI.esc(v.got)}</span>` : 'Not rated yet';
+      return `<div class="hist"><div><button type="button" class="hname tt-inline-link" data-open="${UI.esc(r.id)}">${UI.esc(r.name)}</button><div class="hsub">${sub}</div></div><div class="hdate">${UI.formatDay(v.date)}</div></div>`;
+    }).join('');
   }, renderProfile, UI.skeletonCards(1));
 }
 function updateStats(){
   const ci=document.getElementById('stat-ci');const sv=document.getElementById('stat-sv');
-  if(ci)ci.textContent=TerpData.checkInHistory().length;if(sv)sv.textContent=TerpData.savedIds().length;
+  if(ci)ci.textContent=TerpData.getVisits().length;if(sv)sv.textContent=TerpData.savedIds().length;
 }
 
 // ── SURPRISE ME ───────────────────────────────────────────────────────────────
-let sIdx=0;
+// A random spot from the current results (so filters and search apply), never the
+// same one twice in a row.
+let lastSurprise = null;
 function surpriseMe(){
-  TerpData.getRestaurants().then(list=>{ if(list.length) showDetail(list[sIdx++%list.length].id); })
-    .catch(err=>{ console.error(err); showToast('Restaurants didn’t load. Try again.'); });
+  TerpData.getRestaurants(hasActiveFilters() ? filterQuery() : {}).then(list=>{
+    if(!list.length){ showToast('No spots match your filters. Clear one to get a surprise.'); return; }
+    const pool = list.length > 1 ? list.filter(r=>r.id!==lastSurprise) : list;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    lastSurprise = pick.id;
+    showDetail(pick.id);
+  }).catch(err=>{ console.error(err); showToast('Restaurants didn’t load. Try again.'); });
 }
+document.getElementById('surprise-btn').addEventListener('click', surpriseMe);
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 // Optional action (e.g. Undo) keeps the toast up longer so there's time to use it.

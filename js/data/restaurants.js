@@ -10,7 +10,7 @@
 //   Derived here
 //     distanceMiles   straight-line miles from campus (from location, or the mock value)
 //   TerpTaste-only (never from Google), under .terp
-//     saved, checkIns, groupVotes, studentTags,
+//     saved, visited (your review, or an older check-in), groupVotes, studentTags,
 //     highlights (up to 3: dishes friends rated 4+, then curated), menuItems, deals
 //     (weekly), dealsToday, friendReviews, friendRating {avg,count} or null, myReview, badge,
 //     hoursNote, waitMinutes, waitNote,
@@ -65,7 +65,7 @@ const TerpData = (() => {
   const emptySession = () => ({ name: 'Friday dinner', options: [], votes: {} });
   const user = {
     saved: new Set(),
-    checkIns: [],                                    // [{id, date}], newest first
+    checkIns: [],                                    // older check-ins [{id, date}]; read-only now, see Visits
     session: emptySession(),
     reviews: {},                                     // placeId → {rating, got, note, date}
   };
@@ -189,8 +189,7 @@ const TerpData = (() => {
         deals: (content.deals || []).map(normDeal).filter(Boolean),
         dealsToday: (content.deals || []).map(normDeal).filter(d => d && d.days.includes(todayKey())),
         saved: user.saved.has(place.id),
-        checkIns: user.checkIns.filter(c => c.id === place.id).length,
-        lastCheckIn: user.checkIns.find(c => c.id === place.id)?.date ?? null,
+        visited: visitFor(place.id),                  // {date, rating|null, got|null} or null
         groupVotes: user.session.options.some(o => o.id === place.id)
           ? Object.values(user.session.votes).filter(v => v === place.id).length : null,
       },
@@ -297,29 +296,23 @@ const TerpData = (() => {
     persist();
   }
 
+  // ── Visits ──────────────────────────────────────────────────────────────────
+  // "I went here" is a review. Check-ins saved before check-in was merged into reviews are
+  // still loaded and kept, and count as visits without a rating, so older stored data works.
   function localDay(d = new Date()) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
-  function addCheckIn(id, date = localDay()) {  // YYYY-MM-DD, local time
-    if (user.checkIns.some(c => c.id === id)) return false;
-    user.checkIns.unshift({ id, date });
-    persist();
-    return true;
+  function visitFor(id) {
+    const r = user.reviews[id];
+    if (r) return { id, at: r.date, date: localDay(new Date(r.date)), rating: r.rating, got: r.got };
+    const c = user.checkIns.find(x => x.id === id);
+    return c ? { id, at: c.date, date: c.date, rating: null, got: null } : null;
   }
-  // Returns the removed entry so Undo can put it back with its original date.
-  function removeCheckIn(id) {
-    const i = user.checkIns.findIndex(c => c.id === id);
-    if (i < 0) return null;
-    const [removed] = user.checkIns.splice(i, 1);
-    persist();
-    return { ...removed, index: i };
+  // Every place you've been, newest first: [{id, date 'YYYY-MM-DD', rating|null, got|null}].
+  function getVisits() {
+    const ids = new Set([...Object.keys(user.reviews), ...user.checkIns.map(c => c.id)]);
+    return [...ids].map(visitFor).filter(Boolean).sort((a, b) => b.at.localeCompare(a.at));
   }
-  function restoreCheckIn(entry) {
-    if (!entry || user.checkIns.some(c => c.id === entry.id)) return;
-    user.checkIns.splice(Math.min(entry.index ?? 0, user.checkIns.length), 0, { id: entry.id, date: entry.date });
-    persist();
-  }
-  function checkInHistory() { return user.checkIns.slice(); }
 
   // ── Group vote ──────────────────────────────────────────────────────────────
   // state: 'empty' (no spots yet) | 'waiting' (no votes) | 'leading' (some voted) | 'final' (everyone voted)
@@ -393,7 +386,7 @@ const TerpData = (() => {
     getRestaurants, getRestaurant, getFacets, getDeals, todayKey, DAYS,
     getActivity, saveReview, restoreReview,
     toggleSaved, setSaved, savedIds, restoreSaved,
-    addCheckIn, removeCheckIn, restoreCheckIn, checkInHistory,
+    getVisits,
     getVote, addVoteOption, removeVoteOption, restoreVoteOption, castVote, resetVote, restoreVote,
   };
 })();

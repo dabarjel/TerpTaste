@@ -50,23 +50,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;}
 .phone{background:var(--bg-page);border:1px solid var(--border);border-radius:var(--r-sheet);padding:var(--s-5) var(--s-4) var(--s-6);}
 @media (min-width:768px){.phone{padding:var(--s-6);}}
 .disc-head{display:flex;justify-content:space-between;align-items:flex-end;gap:var(--s-3);flex-wrap:wrap;}
+.phone .tt-walk{padding-left:0;padding-right:0;}
+.phone .tt-results-head{padding-left:0;padding-right:0;}
 .disc-title{font-family:var(--f-display);font-weight:900;font-size:var(--t-44);line-height:.9;}
-.search{margin-top:var(--s-4);display:flex;align-items:center;gap:var(--s-2);background:var(--surface-1);border:1px solid var(--border);border-radius:var(--r-control);padding:0 var(--s-3);}
-.search input{flex:1;min-width:0;background:none;border:0;color:var(--text-primary);font:inherit;font-size:var(--t-16);padding:var(--s-3) 0;}
-.search input::placeholder{color:var(--text-muted);}
-.search input:focus{outline:none;}
-.search:focus-within{border-color:var(--text-secondary);}
-.chips{display:flex;gap:var(--s-2);overflow-x:auto;padding:var(--s-3) 0 var(--s-1);scrollbar-width:none;}
-.chip{flex-shrink:0;padding:6px var(--s-3);border-radius:var(--r-pill);border:1px solid var(--border);font-size:var(--t-14);color:var(--text-secondary);transition:background-color var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out);}
-.chip:hover{color:var(--text-primary);border-color:var(--text-muted);}
-.chip[aria-pressed="true"]{background:var(--action);border-color:var(--action);color:var(--on-action);}
 
-.walk{display:flex;align-items:center;gap:var(--s-3);margin:var(--s-6) 0 var(--s-3);}
-.walk-label{font-family:var(--f-display);font-weight:800;font-size:var(--t-20);line-height:1;white-space:nowrap;}
-.walk-rule{flex:1;height:1px;background:var(--border);}
-.walk-count{font-family:var(--f-data);font-size:var(--t-12);color:var(--text-muted);white-space:nowrap;}
 
-.cards{display:grid;gap:var(--card-gap);grid-template-columns:repeat(auto-fill,minmax(240px,1fr));}
 
 .foot{padding:var(--s-8) 0 var(--s-7);color:var(--text-muted);font-size:var(--t-12);}
 
@@ -94,17 +82,16 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;}
         <h3 class="disc-title">Discover</h3>
         <button class="tt-btn" type="button">Surprise me</button>
       </div>
-      <label class="search">
+      <label class="tt-search" style="margin-top:var(--s-4)">
         <span aria-hidden="true" style="color:var(--text-muted)">⌕</span>
         <input type="search" placeholder="Search spots or dishes" aria-label="Search spots or dishes">
       </label>
-      <div class="chips" role="group" aria-label="Quick filters">
-        <button class="chip" type="button" aria-pressed="true">Open now</button>
-        <button class="chip" type="button" aria-pressed="false">Under $15</button>
-        <button class="chip" type="button" aria-pressed="false">Vegan</button>
-        <button class="chip" type="button" aria-pressed="false">Halal</button>
-        <button class="chip" type="button" aria-pressed="false">Sit-down</button>
-        <button class="chip" type="button" aria-pressed="false">Open late</button>
+      <div class="tt-chips" role="group" aria-label="Quick filters">
+        <button class="tt-chip" type="button" aria-pressed="false">Under $15</button>
+        <button class="tt-chip" type="button" aria-pressed="false">Vegan</button>
+        <button class="tt-chip" type="button" aria-pressed="false">Halal</button>
+        <button class="tt-chip" type="button" aria-pressed="false">Sit-down</button>
+        <button class="tt-chip" type="button" aria-pressed="false">Open late</button>
       </div>
       <div id="discover"></div>
     </div>
@@ -150,26 +137,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;}
 
 <script src="js/data/mock-places.js"></script>
 <script src="js/data/terp-content.js"></script>
+<script src="js/data/mock-friends.js"></script>
 <script src="js/data/restaurants.js"></script>
 <script src="js/ui/components.js"></script>
 <script>
 // Discover uses the real card component and mock data, grouped by walk time.
-const BUCKETS = [
-  {label:'Under 10 min walk', test:m=>m<10},
-  {label:'10 to 20 min walk', test:m=>m>=10 && m<=20},
-  {label:'Worth the drive',   test:m=>m>20},
-];
+// Discover uses the app's components: friends row, then every spot once by walk time.
 async function renderDiscover(){
   const el = document.getElementById('discover');
   try {
     const list = await TerpData.getRestaurants({ sort:'distance' });
-    el.innerHTML = BUCKETS.map(b=>{
-      const rs = list.filter(r=>b.test(UI.walkMinutes(r.distanceMiles))).slice(0,3);
-      if(!rs.length) return '';
-      return `<div class="walk"><span class="walk-label">${b.label}</span><span class="walk-rule"></span><span class="walk-count">${rs.length} ${rs.length>1?'spots':'spot'}</span></div>
-        <div class="cards">${rs.map(r=>UI.card(r)).join('')}</div>`;
-    }).join('') + `<div class="walk"><span class="walk-label">Compact</span><span class="walk-rule"></span></div>
-      <div style="display:flex;gap:var(--card-gap);overflow-x:auto">${list.slice(0,4).map(r=>UI.card(r,{compact:true})).join('')}</div>`;
+    const loved = list.filter(r=>r.terp.friendRating && r.terp.friendRating.avg>=4)
+      .sort((a,b)=>b.terp.friendRating.avg-a.terp.friendRating.avg || b.terp.friendRating.count-a.terp.friendRating.count).slice(0,4);
+    el.innerHTML = UI.cardRow('Your friends love', 'sg-row-friends', loved) + UI.walkSections(list.slice(0, 9));
   } catch(err) {
     UI.mount(el, UI.errorState(), { retry: renderDiscover });
   }
@@ -209,7 +189,7 @@ TerpData.getRestaurants({ ids:['habanero','qu','aroy'] }).then(list=>{ byId = ne
 
 // Toggles
 document.addEventListener('click',e=>{
-  const chip = e.target.closest('.chip');
+  const chip = e.target.closest('.tt-chip');
   if(chip){ chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed')!=='true'); return; }
   const save = e.target.closest('[data-save]');
   if(save){ UI.setSaveButton(save, save.getAttribute('aria-pressed')!=='true', ''); e.stopPropagation(); }

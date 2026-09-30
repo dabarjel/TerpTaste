@@ -195,22 +195,49 @@ const UI = (() => {
     </article>`;
   }
 
+  // ── Walk-time sections (Discover and search results) ──────────────────────
+  // Every spot appears once, in the band for its walk time from campus. Expects the list
+  // sorted by distance. Spots with no distance yet go last.
+  const WALK_BANDS = [
+    { id: 'walk-10',   label: 'Under 10 min walk',       test: m => m != null && m < 10 },
+    { id: 'walk-20',   label: '10 to 20 min walk',       test: m => m != null && m >= 10 && m <= 20 },
+    { id: 'walk-far',  label: 'Worth the drive',         test: m => m != null && m > 20 },
+    { id: 'walk-none', label: 'Distance not listed yet', test: m => m == null },
+  ];
+  function sectionHead(label, id, count) {
+    return `<div class="tt-walk-head"><h2 class="tt-walk-label" id="${id}">${esc(label)}</h2><span class="tt-walk-rule" aria-hidden="true"></span>${count != null ? `<span class="tt-walk-count">${count} ${count === 1 ? 'spot' : 'spots'}</span>` : ''}</div>`;
+  }
+  function walkSections(list) {
+    return WALK_BANDS.map(b => {
+      const rs = list.filter(r => b.test(walkMinutes(r.distanceMiles)));
+      if (!rs.length) return '';
+      return `<section class="tt-walk" aria-labelledby="${b.id}">${sectionHead(b.label, b.id, rs.length)}<div class="tt-grid">${rs.map(r => card(r)).join('')}</div></section>`;
+    }).join('');
+  }
+  // A labelled horizontal row of compact cards (e.g. "Your friends love").
+  function cardRow(label, id, list) {
+    if (!list.length) return '';
+    return `<section class="tt-walk tt-walk--row" aria-labelledby="${id}">${sectionHead(label, id)}<div class="tt-hrow">${list.map(r => card(r, { compact: true })).join('')}</div></section>`;
+  }
+
   // ── Detail view ───────────────────────────────────────────────────────────
   const CHEVRON = `<svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const backButton = label => `<button type="button" class="tt-back" data-action="back">${CHEVRON}${esc(label)}</button>`;
 
-  // Check-in state comes from saved data, so it survives closing and reopening the page.
-  function checkInBlock(r) {
-    if (r.terp.checkIns > 0) {
+  // One action for a visit: "I went here" opens the quick review, and the review is the visit.
+  // A check-in saved before the merge shows as a visit that still needs a rating.
+  function visitBlock(r) {
+    const v = r.terp.visited;
+    const when = v ? esc(formatDay(v.date).replace(/^Today$/, 'today')) : '';
+    if (v && v.rating) {
       return `<div class="tt-checkin is-done">
-        <span class="tt-checkin-text">✓ You checked in ${r.terp.lastCheckIn ? esc(formatDay(r.terp.lastCheckIn).replace(/^Today$/, 'today')) : ''}</span>
-        ${r.terp.myReview ? '' : '<button type="button" class="tt-link" data-action="review" aria-controls="detail-review">Rate it</button>'}
-        <button type="button" class="tt-link" data-action="uncheckin">Remove check-in</button>
+        <span class="tt-checkin-text">✓ You went here ${when}</span>
+        <button type="button" class="tt-link" data-action="review" aria-expanded="false" aria-controls="detail-review">Edit your review</button>
       </div>`;
     }
     return `<div class="tt-checkin">
-      <button type="button" class="tt-btn tt-btn--primary tt-btn--block" data-action="checkin">Check in here</button>
-      <p class="tt-checkin-hint">Been here? Checking in adds it to your visit history.</p>
+      <button type="button" class="tt-btn tt-btn--primary tt-btn--block" data-action="review" aria-expanded="false" aria-controls="detail-review">I went here</button>
+      <p class="tt-checkin-hint">${v ? `You checked in ${when}. Add a rating and what you got so your friends see it in Crew.` : 'Rate it and say what you got. Your friends see it in Crew.'}</p>
     </div>`;
   }
 
@@ -251,10 +278,9 @@ const UI = (() => {
         <div class="tt-detail-actions">
           ${saveTextButton(r)}
           <button type="button" class="tt-btn" data-action="vote">Add to group vote</button>
-          <button type="button" class="tt-btn" data-action="review" aria-expanded="false" aria-controls="detail-review">${t.myReview ? 'Edit your review' : '★ Rate it'}</button>
         </div>
+        <div id="detail-visit">${visitBlock(r)}</div>
         <div id="detail-review" hidden></div>
-        <div id="detail-checkin">${checkInBlock(r)}</div>
         <div class="tt-detail-cols">
           <div>
             ${t.highlights?.length ? `<section class="tt-dsec"><h2 class="tt-dsec-title">What to order</h2>${dishes(r, { large: true })}</section>` : ''}
@@ -374,6 +400,6 @@ const UI = (() => {
   return { esc, price, walkMinutes, walkLabel, miles, avatarColor, initials,
     photoTile, openStatus, dishes, dealItem, dealTag, dealDays, dayName, card,
     stars, friendRating, timeAgo, activityItem, reviewForm, setSaveButton, saveTextButton, chip, formatDay,
-    detail, detailSkeleton, checkInBlock, backButton, scoreboard, voteStatus,
+    walkSections, cardRow, detail, detailSkeleton, visitBlock, backButton, scoreboard, voteStatus,
     skeletonCards, emptyState, errorState, mount };
 })();

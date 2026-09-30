@@ -85,7 +85,7 @@ Priority fixes from the UX heuristics review (2026-09-29), component level:
 - **Nav.** Saved gets a place in the mobile bottom nav.
 - **Search bar** on Discover (name and dish), feeding the same filter state.
 
-## Phase 4: Screens
+## Phase 4: Screens ✅
 First, before the screens (stop for review after this):
 0. ✅ **Highlighted dishes.** Every restaurant card shows up to 3 standout dishes as small tags under the name, on one line so the card stays compact; the row is hidden entirely when a spot has no dish data. The detail page shows the same dishes with more room. Source: `highlights` in `js/data/terp-content.js` (dishes the student review specifically recommends, all on the spot's menu). This is TerpTaste content, so it stays when Google Places data arrives.
 
@@ -105,19 +105,19 @@ First, before the screens (stop for review after this):
    - **Cards** show "Friends: ★4.7 (3)" only when friends have rated the spot.
    - **Detail page:** "Your review" (if you've posted one), then "Friends who've been" with each friend's rating, dish and note, then the student review (only when it isn't by a friend, since friends' reviews already appear above).
    - **Discover:** "Your friends love" row of friends' top-rated spots (average 4+), hidden when there are none.
-   - **Quick review:** "Rate it" on the detail page (and after checking in): star rating, what you got (pick from the menu or type it), optional one line. Rating and dish are required; posting and updating offer Undo. Reviews persist in localStorage and appear in Crew as "You".
+   - **Quick review = the visit.** One action on the detail page, **"I went here"**, opens the review: star rating, what you got (pick from the menu or type it), optional one line. Rating and dish are required; posting and updating offer Undo. The review is what shows in Crew. There is no separate check-in anymore. Check-ins saved before this change still load as visits ("Not rated yet" in Profile, with a prompt on the detail page to add a rating), and Profile counts all of them as Visits.
    - **Dishes feed highlights:** a dish rated 4+ by friends or you becomes a standout dish; most-mentioned first, then the curated picks, capped at 3.
    - **Mock ratings:** the friend posts had no star ratings, so mock ratings were chosen to match each post's tone, plus three rating-only mock visits so a multi-friend average shows. All clearly marked in `mock-friends.js`.
 0e. **Review incentives (plan only, not built).** Badges (for example first review, 10 spots tried, every cuisine on Route 1), streaks (weeks in a row with a review), and a friend leaderboard (reviews or new spots tried this month, among friends only). **Rule: no discounts, deals or rewards of any kind tied to reviews or to the rating given**, since that biases reviews. Incentives reward the act of reviewing, never the score, and never with money.
 
 Rebuild each page with the new components:
-1. Home / Discover: walk-time sections replace "For You / Budget / More nearby / Worth the trip"; each spot appears once. Drop "For You — based on your preferences" unless it actually uses the profile preferences.
-2. Search results
-3. Restaurant detail: ✅ done in Phase 3 group 3: "Back" returns to wherever the user came from (Saved, Friends, Group, Surprise me), not always Home. Check-in state persists when the page is reopened.
+1. ✅ Home / Discover: header rebuilt (Big Shoulders title, "Near UMD College Park. Walk times are from McKeldin Mall." instead of the green "live location" dot, which implied tracking that doesn't exist). Below Today's deals, search and chips: "Your friends love" row, then every spot exactly once in walk-time bands: Under 10 min walk, 10 to 20 min walk, Worth the drive, Distance not listed yet. "For You / Budget / More nearby / Worth the trip" and "For You — based on your preferences" are gone.
+2. ✅ Search results: any search or filter shows a count ("2 spots for noodle") and Clear filters, then the same walk-time bands, nearest first.
+3. Restaurant detail: ✅ done in Phase 3 group 3: "Back" returns to wherever the user came from (Saved, Friends, Group, Surprise me), not always Home. Check-in has since merged into "I went here" (see 0d).
 4. Saved Spots: ✅ done in Phase 3 group 3: removing a spot shows an Undo action in the toast.
 5. Group vote flow: ✅ done in Phase 3 group 4: scoreboard board; the picker offers every restaurant (not just the first 12); options can be removed.
-Also: "Surprise me" picks at random instead of stepping through the list in order.
-Leave room for a **List / Map toggle** in the Discover header. List is the only working view this phase; don't build the map or show a dead Map button (hide it, or mark it Coming soon, until the map exists).
+✅ "Surprise me" picks at random from the current results (so search and filters apply), never the same spot twice in a row. It is now a regular button; gold stays reserved for ratings and the vote leader.
+✅ **List / Map toggle** in the Discover header. List is active; Map is disabled and labelled "Soon" until the Google Maps view exists (see future notes). No dead button.
 
 ## Phase 5: Polish
 - Responsive at 375px, 768px, 1280px, and wider. No horizontal scroll on mobile.

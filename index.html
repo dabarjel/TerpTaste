@@ -55,12 +55,19 @@
 
       <!-- HOME -->
       <div class="panel active" id="panel-home">
-        <div class="ph">
+        <div class="ph tt-disc-head">
           <div>
-            <div class="ph-title">Discover</div>
-            <div class="loc-pill"><div class="loc-dot"></div>College Park · Near Campus</div>
+            <h1 class="ph-title">Discover</h1>
+            <div class="ph-sub">Near UMD College Park. Walk times are from McKeldin Mall.</div>
           </div>
-          <button class="surprise-btn" onclick="surpriseMe()">🎲 Surprise Me</button>
+          <div class="tt-disc-actions">
+            <!-- List / Map: Map arrives with Google Places (see plan); until then it's marked Soon, not clickable. -->
+            <div class="tt-view-toggle" role="group" aria-label="View">
+              <button type="button" class="tt-view-btn" aria-pressed="true">List</button>
+              <button type="button" class="tt-view-btn" aria-pressed="false" disabled aria-describedby="map-soon">Map <span class="tt-view-soon" id="map-soon">Soon</span></button>
+            </div>
+            <button type="button" class="tt-btn" id="surprise-btn">Surprise me</button>
+          </div>
         </div>
         <section class="tt-today" id="deals-today" hidden aria-labelledby="deals-today-title">
           <div class="tt-today-head"><h2 class="tt-today-title" id="deals-today-title">Today’s deals</h2><button type="button" class="tt-link" data-nav="deals">All deals</button></div>
@@ -136,7 +143,7 @@
               <div class="pname">Daniel A.</div>
               <div class="phandle">UMD '27 · College Park</div>
               <div class="sgrid">
-                <div class="scard"><div class="snum" id="stat-ci">0</div><div class="slbl">Check-ins</div></div>
+                <div class="scard"><div class="snum" id="stat-ci">0</div><div class="slbl">Visits</div></div>
                 <div class="scard"><div class="snum" id="stat-sv">0</div><div class="slbl">Saved</div></div>
                 <div class="scard"><div class="snum">12</div><div class="slbl">Friends</div></div>
                 <div class="scard"><div class="snum">4</div><div class="slbl">Groups</div></div>

@@ -27,16 +27,8 @@ html,body{height:100%;font-family:var(--f-body);background:var(--bg-page);color:
 .panel{display:none;}
 .panel.active{display:block;}
 .ph{padding:24px 28px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;background:var(--bg-page);z-index:10;}
-.ph-title{font-family:var(--f-display);font-size:26px;font-weight:700;color:var(--text-primary);}
-.ph-sub{font-size:13px;color:var(--text-muted);margin-top:2px;}
-.loc-pill{display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text-secondary);margin-top:6px;}
-.loc-dot{width:6px;height:6px;border-radius:50%;background:var(--open-green);flex-shrink:0;}
-.surprise-btn{background:var(--terp-gold);color:var(--bg-page);border:none;border-radius:12px;padding:10px 20px;font-family:var(--f-body);font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;margin-top:4px;}
-.surprise-btn:active{transform:scale(0.97);}
-.slabel{padding:18px 28px 10px;font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;}
-.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--card-gap);padding:0 28px 8px;}
-.mrow{padding:0 28px 8px;display:flex;gap:var(--card-gap);overflow-x:auto;margin-bottom:6px;}
-.mrow::-webkit-scrollbar{display:none;}
+.ph-title{font-family:var(--f-display);font-size:var(--t-28);font-weight:900;line-height:1;color:var(--text-primary);}
+.ph-sub{font-size:var(--t-14);color:var(--text-secondary);margin-top:var(--s-1);}
 .abtn{border-radius:10px;padding:11px 18px;font-family:var(--f-body);font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface-2);color:var(--text-primary);}
 .abtn:hover{border-color:var(--border-strong);}
 .playout{display:grid;grid-template-columns:240px 1fr;gap:24px;padding:24px 28px;align-items:start;}
@@ -61,9 +53,6 @@ html,body{height:100%;font-family:var(--f-body);background:var(--bg-page);color:
 @media(max-width:700px){
   .sidebar{display:none;}
   .ph{padding:14px 16px 12px;}
-  .ph-title{font-size:20px;}
-  .slabel{padding:14px 16px 8px;}
-  .cgrid{grid-template-columns:1fr;padding:0 16px 8px;gap:10px;}
-  .mrow{padding:0 16px;}
+  .ph-title{font-size:24px;}
   .playout{grid-template-columns:1fr;padding:16px;}
 }

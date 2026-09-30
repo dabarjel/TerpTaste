@@ -322,7 +322,35 @@
 @media (max-width:700px){ .mobile-nav{display:flex;flex-direction:column;} }
 
 /* ── Saved Spots ──────────────────────────────────────────────────────── */
-.tt-saved-grid{padding-top:var(--s-4);}
+.tt-saved{padding:var(--s-4) 28px 0;}
+@media (max-width:700px){ .tt-saved{padding:var(--s-3) 16px 0;} }
+
+/* ── Walk-time bands and card grids (Discover, search results) ────────── */
+.tt-walk{padding:var(--s-5) 28px 0;}
+.tt-walk-head{display:flex;align-items:center;gap:var(--s-3);margin-bottom:var(--s-3);}
+.tt-walk-label{margin:0;font-family:var(--f-display);font-weight:800;font-size:var(--t-20);line-height:1;white-space:nowrap;color:var(--text-primary);}
+.tt-walk-rule{flex:1;height:1px;background:var(--border);}
+.tt-walk-count{font-family:var(--f-data);font-size:var(--t-12);color:var(--text-muted);white-space:nowrap;}
+.tt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--card-gap);}
+.tt-hrow{display:flex;gap:var(--card-gap);overflow-x:auto;padding-bottom:var(--s-1);scrollbar-width:none;}
+.tt-hrow::-webkit-scrollbar{display:none;}
+.tt-end{height:var(--s-7);}
+
+/* ── Discover header: List / Map toggle and Surprise me ───────────────── */
+.tt-disc-head{align-items:center;}
+.tt-disc-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2);}
+.tt-view-toggle{display:inline-flex;padding:3px;border:1px solid var(--border);border-radius:var(--r-control);background:var(--surface-1);}
+.tt-view-btn{display:inline-flex;align-items:center;gap:6px;padding:6px var(--s-3);border:0;border-radius:6px;background:transparent;color:var(--text-secondary);font-family:var(--f-body);font-size:var(--t-14);font-weight:600;cursor:pointer;}
+.tt-view-btn[aria-pressed="true"]{background:var(--surface-2);color:var(--text-primary);}
+.tt-view-btn:disabled{cursor:not-allowed;color:var(--text-muted);}
+.tt-view-btn:focus-visible{outline:2px solid var(--focus-ring);outline-offset:1px;}
+.tt-view-soon{padding:1px 6px;border:1px solid var(--border);border-radius:var(--r-pill);font-size:11px;font-weight:500;color:var(--text-muted);}
+
+@media (max-width:700px){
+  .tt-walk{padding:var(--s-4) 16px 0;}
+  .tt-grid{grid-template-columns:1fr;}
+  .tt-disc-actions{width:100%;justify-content:space-between;}
+}
 
 /* Page gutters while the legacy screen layout is still in place (Phase 4 replaces it). */
 .tt-gutter{padding:var(--s-4) 28px;}
