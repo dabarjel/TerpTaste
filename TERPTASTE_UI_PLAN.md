@@ -63,7 +63,7 @@ Built in four groups, with a stop for review after each:
 1. ✅ Restaurant card, photo fallback, loading/empty/error states (`js/ui/components.js`, `css/components.css`)
 2. ✅ Search bar and filter chips, with the Filter panel actually filtering
 3. ✅ Detail view, check-in, Saved Spots (includes Back-to-origin, persistent check-in state, and Undo from Phase 4)
-4. Group Vote scoreboard and nav, with Saved in the mobile nav
+4. ✅ Group Vote scoreboard and nav, with Saved in the mobile nav
 
 Build or rebuild these as reusable pieces using tokens only:
 - Restaurant card (photo, name, cuisine, price, rating, distance, open/closed badge, save button)
@@ -91,7 +91,7 @@ Rebuild each page with the new components:
 2. Search results
 3. Restaurant detail: ✅ done in Phase 3 group 3: "Back" returns to wherever the user came from (Saved, Friends, Group, Surprise me), not always Home. Check-in state persists when the page is reopened.
 4. Saved Spots: ✅ done in Phase 3 group 3: removing a spot shows an Undo action in the toast.
-5. Group vote flow: scoreboard board; the picker offers every restaurant (not just the first 12); options can be removed.
+5. Group vote flow: ✅ done in Phase 3 group 4: scoreboard board; the picker offers every restaurant (not just the first 12); options can be removed.
 Also: "Surprise me" picks at random instead of stepping through the list in order.
 Leave a placeholder spot on Discover and Detail for a map later. Don't build the map yet.
 

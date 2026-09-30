@@ -13,13 +13,15 @@
 //     saved, checkIns, groupVotes, studentTags,
 //     badge, hoursNote, waitMinutes, waitNote, priceRange, review, menu, dietNotes
 //
-// Test switches (URL params): ?delay=500 adds latency, ?fail=1 makes every fetch reject.
+// Test switches (URL params): ?delay=500 adds latency, ?fail=1 makes every fetch reject,
+// ?friendsVote=1 has the mock group members vote so Leading/Final can be reviewed.
 
 const TerpData = (() => {
   const params = new URLSearchParams(location.search);
   const config = {
     delayMs: Number(params.get('delay')) || 0,
     fail: params.get('fail') === '1',
+    friendsVote: params.get('friendsVote') === '1',
   };
 
   const CAMPUS = { lat: 38.9869, lng: -76.9426 }; // McKeldin Mall, UMD College Park
@@ -29,10 +31,19 @@ const TerpData = (() => {
   // windows, blocked site data), so every access is wrapped and the app falls back to
   // in-memory state.
   const STORAGE_KEY = 'terptaste:user:v1';
+  // Group vote session. Members are mock until there's a backend; only "me" votes for real.
+  // options: [{id, addedBy}], votes: {memberId: placeId}. Starts empty.
+  const MEMBERS = [
+    { id:'me', name:'You',       initials:'DA' },
+    { id:'ak', name:'Aisha K.',  initials:'AK' },
+    { id:'jt', name:'Jordan T.', initials:'JT' },
+    { id:'mr', name:'Marcus R.', initials:'MR' },
+  ];
+  const emptySession = () => ({ name: 'Friday dinner', options: [], votes: {} });
   const user = {
     saved: new Set(),
     checkIns: [],                                    // [{id, date}], newest first
-    vote: { options: ['habanero','qu','aroy'], counts: { habanero:3, qu:1, aroy:0 }, mine: 'habanero' },
+    session: emptySession(),
   };
 
   function loadUser() {
@@ -42,17 +53,19 @@ const TerpData = (() => {
     const isStr = s => typeof s === 'string';
     if (Array.isArray(data.saved)) user.saved = new Set(data.saved.filter(isStr));
     if (Array.isArray(data.checkIns)) user.checkIns = data.checkIns.filter(c => c && isStr(c.id) && isStr(c.date));
-    const v = data.vote;
-    if (v && Array.isArray(v.options) && v.counts && typeof v.counts === 'object') {
-      const options = v.options.filter(isStr);
-      const counts = {};
-      options.forEach(id => { const n = Number(v.counts[id]); counts[id] = Number.isFinite(n) && n >= 0 ? n : 0; });
-      user.vote = { options, counts, mine: options.includes(v.mine) ? v.mine : null };
+    // Older saves kept a seeded "vote" object; it's ignored so the vote starts empty.
+    const s = data.session;
+    if (s && Array.isArray(s.options)) {
+      const options = s.options.filter(o => o && isStr(o.id)).map(o => ({ id: o.id, addedBy: isStr(o.addedBy) ? o.addedBy : 'me' }));
+      const ids = new Set(options.map(o => o.id));
+      const votes = {};
+      MEMBERS.forEach(m => { const v = s.votes && s.votes[m.id]; if (isStr(v) && ids.has(v)) votes[m.id] = v; });
+      user.session = { name: isStr(s.name) ? s.name : 'Friday dinner', options, votes };
     }
   }
   function persist() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ saved: [...user.saved], checkIns: user.checkIns, vote: user.vote }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ saved: [...user.saved], checkIns: user.checkIns, session: user.session }));
     } catch (_) { /* storage unavailable: keep in-memory state */ }
   }
   loadUser();
@@ -95,7 +108,8 @@ const TerpData = (() => {
         saved: user.saved.has(place.id),
         checkIns: user.checkIns.filter(c => c.id === place.id).length,
         lastCheckIn: user.checkIns.find(c => c.id === place.id)?.date ?? null,
-        groupVotes: user.vote.options.includes(place.id) ? (user.vote.counts[place.id] || 0) : null,
+        groupVotes: user.session.options.some(o => o.id === place.id)
+          ? Object.values(user.session.votes).filter(v => v === place.id).length : null,
       },
     };
   }
@@ -192,25 +206,78 @@ const TerpData = (() => {
   }
   function checkInHistory() { return user.checkIns.slice(); }
 
-  function getVote() { return { options: user.vote.options.slice(), counts: { ...user.vote.counts }, mine: user.vote.mine }; }
+  // ── Group vote ──────────────────────────────────────────────────────────────
+  // state: 'empty' (no spots yet) | 'waiting' (no votes) | 'leading' (some voted) | 'final' (everyone voted)
+  function getVote() {
+    const s = user.session;
+    const counts = {};
+    s.options.forEach(o => { counts[o.id] = 0; });
+    Object.values(s.votes).forEach(id => { if (id in counts) counts[id]++; });
+    const votedCount = Object.keys(s.votes).length;
+    const max = Math.max(0, ...Object.values(counts));
+    const leaders = max > 0 ? s.options.filter(o => counts[o.id] === max).map(o => o.id) : [];
+    const state = !s.options.length ? 'empty' : votedCount === 0 ? 'waiting' : votedCount >= MEMBERS.length ? 'final' : 'leading';
+    return {
+      name: s.name,
+      members: MEMBERS.map(m => ({ ...m, voted: m.id in s.votes })),
+      options: s.options.map(o => ({ id: o.id, addedBy: o.addedBy, mine: o.addedBy === 'me', count: counts[o.id] })),
+      mine: s.votes.me || null,
+      votedCount, total: MEMBERS.length, leaders, state,
+    };
+  }
+  // Test switch only: mock friends vote so Leading/Final can be seen without a backend.
+  function simulateFriends() {
+    // Waits for two spots so the demo shows a real race rather than a unanimous pick.
+    if (!config.friendsVote || user.session.options.length < 2) return;
+    MEMBERS.slice(1).forEach((m, i) => {
+      if (!(m.id in user.session.votes)) user.session.votes[m.id] = user.session.options[i % 2].id;
+    });
+  }
   function addVoteOption(id) {
-    if (user.vote.options.includes(id)) return false;
-    user.vote.options.push(id); user.vote.counts[id] = 0;
+    if (user.session.options.some(o => o.id === id)) return false;
+    user.session.options.push({ id, addedBy: 'me' });
+    simulateFriends();
     persist();
     return true;
   }
-  function castVote(id) {
-    const v = user.vote;
-    if (v.mine) v.counts[v.mine] = Math.max(0, (v.counts[v.mine] || 1) - 1);
-    v.mine = id; v.counts[id] = (v.counts[id] || 0) + 1;
+  // Only spots you added can be removed. Returns what Undo needs to put it back.
+  function removeVoteOption(id) {
+    const s = user.session;
+    const index = s.options.findIndex(o => o.id === id && o.addedBy === 'me');
+    if (index < 0) return null;
+    const [option] = s.options.splice(index, 1);
+    const votes = {};
+    Object.entries(s.votes).forEach(([m, v]) => { if (v === id) { votes[m] = v; delete s.votes[m]; } });
+    persist();
+    return { option, index, votes };
+  }
+  function restoreVoteOption(snapshot) {
+    if (!snapshot || user.session.options.some(o => o.id === snapshot.option.id)) return;
+    user.session.options.splice(Math.min(snapshot.index, user.session.options.length), 0, snapshot.option);
+    Object.entries(snapshot.votes).forEach(([m, v]) => { if (!(m in user.session.votes)) user.session.votes[m] = v; });
     persist();
   }
+  function castVote(id) {
+    if (!user.session.options.some(o => o.id === id)) return false;
+    user.session.votes.me = id;
+    simulateFriends();
+    persist();
+    return true;
+  }
+  // Start over; returns the old session so Undo can bring it back.
+  function resetVote() {
+    const old = JSON.parse(JSON.stringify(user.session));
+    user.session = emptySession();
+    persist();
+    return old;
+  }
+  function restoreVote(old) { if (old) { user.session = old; persist(); } }
 
   return {
     config,
     getRestaurants, getRestaurant, getFacets,
     toggleSaved, setSaved, savedIds, restoreSaved,
     addCheckIn, removeCheckIn, restoreCheckIn, checkInHistory,
-    getVote, addVoteOption, castVote,
+    getVote, addVoteOption, removeVoteOption, restoreVoteOption, castVote, resetVote, restoreVote,
   };
 })();

@@ -57,14 +57,9 @@ function showPanel(id){
   document.getElementById('panel-'+id).classList.add('active');
 }
 function highlightNav(id){
-  pages.forEach(pg=>{
-    const isA = pg===id;
-    ['sb-','mn-'].forEach(pre=>{
-      const el = document.getElementById(pre+pg);
-      if(!el) return;
-      el.classList.toggle('active', isA);
-      el.querySelectorAll('path,circle,line,polyline').forEach(e=>e.setAttribute('stroke',isA?'var(--terp-gold)':'var(--text-muted)'));
-    });
+  document.querySelectorAll('[data-nav]').forEach(el=>{
+    if(el.dataset.nav===id) el.setAttribute('aria-current','page');
+    else el.removeAttribute('aria-current');
   });
 }
 // restoreScroll: return to where the user was on that screen (used by Back from detail).
@@ -299,11 +294,7 @@ async function showDetail(key) {
 }
 function goBack(){ go(detailFrom, { restoreScroll:true }); }
 
-function suggestToGroup(r){
-  const added = TerpData.addVoteOption(r.id);
-  showToast(added ? `Added ${r.name} to the group vote` : `${r.name} is already in the group vote`,
-    { action:{ label:'View vote', run:()=>go('group') } });
-}
+function suggestToGroup(r){ addToVote(r.id, r.name); }
 
 // Check-in block re-renders from saved data after every change.
 async function refreshCheckIn(id){
@@ -352,47 +343,88 @@ function renderSaved() {
 }
 
 
-// ── GROUP ─────────────────────────────────────────────────────────────────────
-function renderGroup() {
-  const sg = document.getElementById('gsugg');
-  TerpData.getRestaurants().then(list=>{
-    sg.innerHTML = list.slice(0,12).map(r=>`<div class="gchip" onclick="addToVote('${r.id}')">${r.name}</div>`).join('');
-  }).catch(err=>{ console.error(err); sg.innerHTML=''; });
-  renderVoteCards();
+// ── GROUP VOTE ────────────────────────────────────────────────────────────────
+// All spots come from TerpData; the board and picker re-render from TerpData.getVote().
+let allSpots = null;                                   // cached list for the picker and board
+let lastCounts = {};                                   // to flip only the counts that moved
+function loadSpots(){
+  return allSpots ? Promise.resolve(allSpots) : TerpData.getRestaurants().then(l=>(allSpots = l));
 }
-function addToVote(key) {
-  if(!TerpData.addVoteOption(key)){ showToast('Already in the vote!'); return; }
-  renderVoteCards();
-  TerpData.getRestaurant(key).then(r=>showToast(`Added ${r.name} to the vote`)).catch(()=>{});
+function renderGroup(){
+  const el = document.getElementById('vote-board');
+  return withLoading(el, loadSpots(), ()=>{ renderVoteBoard(); renderPicker(); },
+    ()=>{ allSpots = null; renderGroup(); }, UI.skeletonCards(1));
 }
-let voteReq = 0;
-function renderVoteCards() {
-  const el = document.getElementById('vcards'); if(!el) return;
-  const req = ++voteReq;
+function renderVoteBoard(){
+  const el = document.getElementById('vote-board');
+  if(!allSpots) return;
   const vote = TerpData.getVote();
-  return withLoading(el, TerpData.getRestaurants({ids: vote.options}), list=>{
-    if(req!==voteReq) return;
-    const total = list.reduce((a,r)=>a+(r.terp.groupVotes||0),0);
-    const maxV = Math.max(...list.map(r=>r.terp.groupVotes||0));
-    el.innerHTML = list.map(r=>{
-      const v=r.terp.groupVotes||0; const pct=total>0?Math.round(v/total*100):0; const leading=v===maxV&&v>0;
-      return `<div class="vcard${vote.mine===r.id?' picked':''}" onclick="castVote('${r.id}')">
-        <div class="vheader"><div class="vname">${r.name}</div>${leading?'<div class="vtag">Leading</div>':''}</div>
-        <div class="vmeta">${r.primaryTypeDisplayName} · ${price(r)} · ${r.distanceMiles} mi${typeof r.isOpenNow==='boolean' ? (r.isOpenNow?' · Open now':' · Closed') : ''}</div>
-        <div class="vbar-bg"><div class="vbar" style="width:${pct}%"></div></div>
-        <div class="vcount">${v} of ${total} voted</div>
-      </div>`;
-    }).join('');
-    const top = list.slice().sort((a,b)=>(b.terp.groupVotes||0)-(a.terp.groupVotes||0))[0];
-    if(top && (top.terp.groupVotes||0)>0){
-      document.getElementById('win-name').textContent = `${top.name} wins!`;
-      document.getElementById('win-sub').textContent = `${top.distanceMiles} mi · ${top.primaryTypeDisplayName} · ${price(top)}`;
-    }
-  }, renderVoteCards, UI.skeletonCards(1));
+  const changed = vote.options.filter(o=>o.id in lastCounts && lastCounts[o.id]!==o.count).map(o=>o.id);
+  lastCounts = Object.fromEntries(vote.options.map(o=>[o.id, o.count]));
+  if(vote.state==='empty'){
+    UI.mount(el, UI.emptyState({
+      title: 'No spots in this vote yet',
+      body: `Add a few spots to get started, here or with Add to group vote on any spot. Everyone taps their pick, and the result is final once all ${vote.total} have voted.`,
+    }));
+    return;
+  }
+  const byId = new Map(allSpots.map(r=>[r.id, r]));
+  UI.mount(el, UI.scoreboard(vote, byId, { changed }), { reset: resetVoteWithUndo });
 }
-function castVote(key) {
-  TerpData.castVote(key); renderVoteCards();
+function renderPicker(){
+  const el = document.getElementById('vote-picker');
+  if(!allSpots) return;
+  const q = document.getElementById('picker-search').value.trim().toLowerCase();
+  const inVote = new Map(TerpData.getVote().options.map(o=>[o.id, o]));
+  const list = allSpots.filter(r=>!q || r.name.toLowerCase().includes(q) || (r.primaryTypeDisplayName||'').toLowerCase().includes(q));
+  const final = TerpData.getVote().state==='final';
+  el.innerHTML = list.length ? list.map(r=>{
+    const o = inVote.get(r.id);
+    // In the vote: pressed. Only spots you added can be taken out again.
+    const locked = final || (o && !o.mine);
+    return `<button type="button" class="tt-chip" data-vote-toggle="${UI.esc(r.id)}" aria-pressed="${!!o}"${locked ? ' disabled' : ''}>${o ? '✓ ' : ''}${UI.esc(r.name)}</button>`;
+  }).join('') : `<p class="tt-fhint">No spots match “${UI.esc(q)}”.</p>`;
 }
+function refreshVote(){ renderVoteBoard(); renderPicker(); }
+
+function addToVote(id, name){
+  const added = TerpData.addVoteOption(id);
+  if(activePanel()==='group') refreshVote();
+  showToast(added ? `Added ${name} to the group vote` : `${name} is already in the group vote`,
+    activePanel()==='group' ? {} : { action:{ label:'View vote', run:()=>go('group') } });
+}
+function removeFromVoteWithUndo(id){
+  const name = allSpots?.find(r=>r.id===id)?.name || 'Spot';
+  const snap = TerpData.removeVoteOption(id);
+  if(!snap) return;
+  refreshVote();
+  showToast(`Removed ${name} from the vote`, { action:{ label:'Undo', run:()=>{ TerpData.restoreVoteOption(snap); refreshVote(); } } });
+}
+function resetVoteWithUndo(){
+  const old = TerpData.resetVote();
+  lastCounts = {};
+  refreshVote();
+  showToast('Started a new vote', { action:{ label:'Undo', run:()=>{ TerpData.restoreVote(old); refreshVote(); } } });
+}
+
+document.getElementById('picker-search').addEventListener('input', renderPicker);
+document.addEventListener('click', e=>{
+  const nav = e.target.closest('[data-nav]');
+  if(nav){ go(nav.dataset.nav); return; }
+  const vote = e.target.closest('[data-vote]');
+  if(vote){ TerpData.castVote(vote.dataset.vote); refreshVote(); return; }
+  const rm = e.target.closest('[data-vote-remove]');
+  if(rm){ removeFromVoteWithUndo(rm.dataset.voteRemove); return; }
+  const tog = e.target.closest('[data-vote-toggle]');
+  if(tog){
+    const id = tog.dataset.voteToggle;
+    if(tog.getAttribute('aria-pressed')==='true') removeFromVoteWithUndo(id);
+    else addToVote(id, allSpots.find(r=>r.id===id)?.name || 'Spot');
+    return;
+  }
+  const add = e.target.closest('[data-vote-add]');
+  if(add) addToVote(add.dataset.voteAdd, add.dataset.name || 'Spot');
+});
 
 // ── PROFILE ───────────────────────────────────────────────────────────────────
 function renderProfile() {
@@ -448,6 +480,7 @@ function loadFacets(){
     renderFilterPanel();
   }).catch(err=>console.error(err));
 }
+highlightNav('home');
 renderChips();
 loadFacets();
 renderHome();

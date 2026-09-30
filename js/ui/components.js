@@ -168,6 +168,53 @@ const UI = (() => {
     </article>`;
   }
 
+  // ── Group vote scoreboard ─────────────────────────────────────────────────
+  // vote: TerpData.getVote(); byId: Map of restaurants; changed: ids whose count just moved (flip).
+  function voteStatus(vote, byId) {
+    const n = `${vote.votedCount} of ${vote.total} voted`;
+    const names = vote.leaders.map(id => byId.get(id)?.name || '').filter(Boolean);
+    if (vote.state === 'waiting') return `No votes yet. ${n}.`;
+    if (names.length > 1) return `<b>${vote.state === 'final' ? 'Final' : 'Tied'}:</b> ${names.map(esc).join(' and ')}${vote.state === 'final' ? ' tied' : ''}. ${n}.`;
+    return `<b>${vote.state === 'final' ? 'Final' : 'Leading'}:</b> ${esc(names[0] || '')}. ${n}.`;
+  }
+  function scoreboard(vote, byId, { changed = [] } = {}) {
+    const final = vote.state === 'final';
+    const single = vote.leaders.length === 1 ? vote.leaders[0] : null;
+    const voters = vote.members.map(m =>
+      `<li class="tt-voter${m.voted ? ' is-voted' : ''}" title="${esc(m.name)}${m.voted ? ' voted' : ' hasn’t voted'}">
+        <span class="tt-avatar" style="background:${m.id === 'me' ? 'var(--action)' : avatarColor(m.name)}" aria-hidden="true">${esc(m.initials)}</span>
+        <span class="tt-voter-name">${esc(m.name)}</span><span class="tt-visually-hidden">${m.voted ? ', voted' : ', not voted yet'}</span>
+      </li>`).join('');
+    const rows = vote.options.map(o => {
+      const r = byId.get(o.id);
+      if (!r) return '';
+      const lead = o.id === single;
+      const mine = vote.mine === o.id;
+      return `<li class="tt-vrow${lead ? ' is-leader' : ''}">
+        <button type="button" class="tt-vrow-main" data-vote="${esc(o.id)}" aria-pressed="${mine}"${final ? ' disabled' : ''}>
+          <span class="tt-vbar" aria-hidden="true"></span>
+          <span class="tt-vrow-text">
+            <span class="tt-vname">${esc(r.name)}${mine ? '<span class="tt-mine">Your vote</span>' : ''}</span>
+            <span class="tt-vmeta">${price(r)}  ${miles(r.distanceMiles)}  ${walkLabel(r.distanceMiles)}</span>
+          </span>
+          <span class="tt-vcount" aria-label="${o.count} ${o.count === 1 ? 'vote' : 'votes'}"><span class="${changed.includes(o.id) ? 'flip' : ''}">${o.count}</span></span>
+        </button>
+        ${o.mine && !final ? `<button type="button" class="tt-vrow-remove" data-vote-remove="${esc(o.id)}" aria-label="Remove ${esc(r.name)} from the vote">Remove</button>` : ''}
+      </li>`;
+    }).join('');
+    return `<section class="tt-board" aria-label="Group vote">
+      <header class="tt-board-head">
+        <h2 class="tt-board-title">${esc(vote.name)}</h2>
+        <p class="tt-board-status" role="status">${voteStatus(vote, byId)}</p>
+      </header>
+      <ul class="tt-voters" aria-label="Who has voted">${voters}</ul>
+      <ol class="tt-vrows">${rows}</ol>
+      <footer class="tt-board-foot">${final
+        ? `Everyone has voted. <button type="button" class="tt-link" data-action="reset">Start a new vote</button>`
+        : 'Tap a spot to vote. You can change your vote until everyone has voted.'}</footer>
+    </section>`;
+  }
+
   function skeletonCards(n = 3, { compact = false } = {}) {
     const one = `<div class="tt-card tt-skel${compact ? ' tt-card--compact' : ''}" aria-hidden="true">
       <div class="tt-skel-block tt-skel-tile"></div>
@@ -211,6 +258,6 @@ const UI = (() => {
 
   return { esc, price, walkMinutes, walkLabel, miles, avatarColor, initials,
     photoTile, openStatus, trustLine, card, setSaveButton, saveTextButton, chip, formatDay,
-    detail, detailSkeleton, checkInBlock, backButton,
+    detail, detailSkeleton, checkInBlock, backButton, scoreboard, voteStatus,
     skeletonCards, emptyState, errorState, mount };
 })();

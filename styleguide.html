@@ -68,31 +68,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;}
 
 .cards{display:grid;gap:var(--card-gap);grid-template-columns:repeat(auto-fill,minmax(240px,1fr));}
 
-/* ── Group vote scoreboard ─────────────────────────────────────────── */
-.board{background:var(--surface-1);border-radius:var(--r-sheet);overflow:hidden;}
-.board-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-3);flex-wrap:wrap;padding:var(--s-4) var(--s-5);border-bottom:1px solid var(--border);}
-.board-title{font-family:var(--f-display);font-weight:900;font-size:var(--t-28);line-height:1;}
-.board-status{font-size:var(--t-14);color:var(--text-secondary);}
-.board-status b{color:var(--highlight);font-weight:600;}
-.vrow{display:grid;grid-template-columns:4px 1fr auto;align-items:center;gap:var(--s-4);width:100%;text-align:left;padding:var(--s-3) var(--s-5) var(--s-3) 0;border-bottom:1px solid var(--border);transition:background-color var(--dur-fast) var(--ease-out);}
-.vrow:last-child{border-bottom:0;}
-.vrow:hover{background:color-mix(in srgb,var(--text-primary) 4%,transparent);}
-.vbar{align-self:stretch;background:transparent;}
-.vrow.leader .vbar{background:var(--highlight);}
-.vname{font-family:var(--f-display);font-weight:800;font-size:var(--t-28);line-height:1;display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap;}
-.vmeta{font-family:var(--f-data);font-size:var(--t-12);color:var(--text-muted);margin-top:var(--s-1);}
-.mine{font-family:var(--f-body);font-size:var(--t-12);font-weight:600;color:var(--on-action);background:var(--action);padding:2px 8px;border-radius:var(--r-pill);}
-.vcount{font-family:var(--f-display);font-weight:900;font-size:var(--vote-count-size);line-height:.85;min-width:1.2ch;text-align:right;font-variant-numeric:tabular-nums;overflow:hidden;height:.85em;}
-.vrow.leader .vcount{color:var(--highlight);}
-.vcount span{display:block;}
-.vcount span.flip{animation:flip var(--dur-flip) var(--ease-out);}
-@keyframes flip{from{transform:translateY(-70%);opacity:0;}to{transform:none;opacity:1;}}
-.board-foot{padding:var(--s-3) var(--s-5);font-size:var(--t-14);color:var(--text-muted);border-top:1px solid var(--border);}
-
-/* ── States ────────────────────────────────────────────────────────── */
-.states{display:grid;gap:var(--s-4);grid-template-columns:repeat(auto-fill,minmax(280px,1fr));align-items:start;}
-.states > *{max-width:none;}
-
 .foot{padding:var(--s-8) 0 var(--s-7);color:var(--text-muted);font-size:var(--t-12);}
 
 @media (prefers-reduced-motion:reduce){
@@ -137,14 +112,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;}
 
   <section class="sg-section" aria-labelledby="h-vote">
     <h2 class="sg-h" id="h-vote">Group vote</h2>
-    <div class="board">
-      <div class="board-head">
-        <h3 class="board-title">Friday dinner</h3>
-        <div class="board-status" id="board-status"></div>
-      </div>
-      <div id="board"></div>
-      <div class="board-foot">Tap a spot to move your vote.</div>
-    </div>
+    <div class="sg-boards"><div id="board-live"></div><div id="board-final"></div></div>
   </section>
 
   <section class="sg-section" aria-labelledby="h-states">
@@ -211,36 +179,33 @@ document.getElementById('states').innerHTML =
   UI.emptyState({ title:'No spots match', body:'Nothing nearby matches this filter yet.', action:{ label:'Show all spots', name:'all' } }) +
   UI.errorState();
 
-// Scoreboard
-const MEMBERS = 5;
-const vote = {options:[
-  {name:'Taqueria Habanero', meta:'$$   0.4 mi   8 min', n:2},
-  {name:'Qu Japan',          meta:'$$   0.3 mi   6 min', n:1},
-  {name:'Aroy Thai',         meta:'$    0.6 mi   12 min', n:1},
-], mine:0};
-function renderBoard(changed){
-  const total = vote.options.reduce((a,o)=>a+o.n,0);
-  const max = Math.max(...vote.options.map(o=>o.n));
-  const leaders = vote.options.filter(o=>o.n===max);
-  const done = total>=MEMBERS;
-  document.getElementById('board-status').innerHTML = leaders.length>1
-    ? `Tied. ${total} of ${MEMBERS} have voted.`
-    : `<b>${done?'Final':'Leading'}:</b> ${leaders[0].name}. ${total} of ${MEMBERS} have voted.`;
-  document.getElementById('board').innerHTML = vote.options.map((o,i)=>{
-    const lead = o.n===max && leaders.length===1;
-    return `<button class="vrow${lead?' leader':''}" type="button" data-i="${i}" aria-pressed="${vote.mine===i}">
-      <span class="vbar"></span>
-      <span><span class="vname">${o.name}${vote.mine===i?'<span class="mine">Your vote</span>':''}</span><span class="vmeta">${o.meta}</span></span>
-      <span class="vcount" aria-label="${o.n} votes"><span class="${changed&&changed.includes(i)?'flip':''}">${o.n}</span></span>
-    </button>`;
-  }).join('');
+// Scoreboard: sample sessions shaped like TerpData.getVote(); they never touch the user's real vote.
+const SG_MEMBERS = [{id:'me',name:'You',initials:'DA'},{id:'ak',name:'Aisha K.',initials:'AK'},{id:'jt',name:'Jordan T.',initials:'JT'},{id:'mr',name:'Marcus R.',initials:'MR'}];
+function sampleVote(votes){
+  const ids = ['habanero','qu','aroy'];
+  const counts = Object.fromEntries(ids.map(id=>[id, Object.values(votes).filter(v=>v===id).length]));
+  const max = Math.max(...Object.values(counts));
+  const voted = Object.keys(votes).length;
+  return { name:'Friday dinner', total:4, votedCount:voted, mine:votes.me||null,
+    members: SG_MEMBERS.map(m=>({...m, voted: m.id in votes})),
+    options: ids.map((id,i)=>({ id, addedBy: i===2 ? 'me' : 'ak', mine: i===2, count: counts[id] })),
+    leaders: max ? ids.filter(id=>counts[id]===max) : [],
+    state: voted===4 ? 'final' : voted ? 'leading' : 'waiting' };
 }
-document.getElementById('board').addEventListener('click',e=>{
-  const row = e.target.closest('.vrow'); if(!row) return;
-  const i = +row.dataset.i; if(i===vote.mine) return;
-  vote.options[vote.mine].n--; vote.options[i].n++;
-  const changed=[vote.mine,i]; vote.mine=i; renderBoard(changed);
+const liveVotes = { me:'habanero', ak:'habanero', jt:'qu' };
+let byId, lastLive = {};
+function renderBoards(){
+  const v = sampleVote(liveVotes);
+  const changed = v.options.filter(o=>o.id in lastLive && lastLive[o.id]!==o.count).map(o=>o.id);
+  lastLive = Object.fromEntries(v.options.map(o=>[o.id,o.count]));
+  document.getElementById('board-live').innerHTML = UI.scoreboard(v, byId, { changed });
+  document.getElementById('board-final').innerHTML = UI.scoreboard(sampleVote({ me:'qu', ak:'habanero', jt:'qu', mr:'qu' }), byId);
+}
+document.getElementById('board-live').addEventListener('click', e=>{
+  const row = e.target.closest('[data-vote]');
+  if(row){ liveVotes.me = row.dataset.vote; renderBoards(); }
 });
+TerpData.getRestaurants({ ids:['habanero','qu','aroy'] }).then(list=>{ byId = new Map(list.map(r=>[r.id,r])); renderBoards(); });
 
 // Toggles
 document.addEventListener('click',e=>{
@@ -251,7 +216,6 @@ document.addEventListener('click',e=>{
 });
 
 renderDiscover();
-renderBoard();
 </script>
 </body>
 </html>
