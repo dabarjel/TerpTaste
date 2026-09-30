@@ -1,0 +1,16 @@
+<!doctype html><html><body><pre id="RESULT"></pre>
+<script>
+const widths=[320,375,768,1280,1600];const out={};let done=0;
+widths.forEach(w=>{const f=document.createElement('iframe');f.style.cssText='width:'+w+'px;height:800px;border:0';f.src='{{ROOT}}/index.html?today=mon';document.body.appendChild(f);
+ f.onload=async()=>{const W=f.contentWindow,D=f.contentDocument;const wait=ms=>new Promise(r=>setTimeout(r,ms));await wait(400);
+  const res=[];
+  for(const p of ['home','filter','crew','deals','saved','profile','detail']){
+    if(p==='detail'){ await W.showDetail('habanero'); } else { W.go(p); }
+    await wait(250);
+    const m=D.getElementById('main');const docOver=D.documentElement.scrollWidth-W.innerWidth;const mainOver=m.scrollWidth-m.clientWidth;
+    // anything wider than the viewport that isn't inside an intentional horizontal scroller or a clipped tile
+    const wide=[...D.querySelectorAll('#panel-'+p+' *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>W.innerWidth+1&&!e.closest('.tt-hrow,.tt-chips,.tt-deal-row,.tt-tile,.tt-detail-hero,.tt-picker-list')}).slice(0,3).map(e=>e.className||e.tagName);
+    res.push(p+(docOver>0||mainOver>0||wide.length?' OVER doc='+docOver+' main='+mainOver+' '+wide.join('/'):' ok'));
+  }
+  out[w]=res.join(' | ');if(++done===widths.length)document.getElementById('RESULT').textContent=JSON.stringify(out);};});
+</script></body></html>
