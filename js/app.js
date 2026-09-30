@@ -48,7 +48,7 @@ document.addEventListener('click', e=>{
 });
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
-const pages = ['home','filter','group','friends','saved','profile'];
+const pages = ['home','filter','group','deals','saved','profile'];
 const activePanel = () => (document.querySelector('.panel.active')?.id || '').replace('panel-','');
 const scrollMemory = {};
 
@@ -57,7 +57,7 @@ function showPanel(id){
   document.getElementById('panel-'+id).classList.add('active');
 }
 function highlightNav(id){
-  document.querySelectorAll('[data-nav]').forEach(el=>{
+  document.querySelectorAll('.snav[data-nav], .nitem[data-nav]').forEach(el=>{
     if(el.dataset.nav===id) el.setAttribute('aria-current','page');
     else el.removeAttribute('aria-current');
   });
@@ -75,6 +75,7 @@ function go(id, { restoreScroll = false } = {}) {
   if(id==='profile') rendering = renderProfile();
   if(id==='group') renderGroup();
   if(id==='friends') syncAllSaveButtons();
+  if(id==='deals') rendering = renderDeals();
   if(restoreScroll){
     const y = scrollMemory[id] || 0;
     // The list is in the DOM once rendering resolves, so the position can be set right away.
@@ -200,6 +201,7 @@ function updateApplyCount(){
 // ── HOME ──────────────────────────────────────────────────────────────────────
 let homeReq = 0;
 function renderHome() {
+  renderTodayDeals();
   const req = ++homeReq;
   const el = document.getElementById('home-content');
   const active = hasActiveFilters();
@@ -258,7 +260,7 @@ document.getElementById('filter-clear').addEventListener('click', ()=>clearAllFi
 document.getElementById('filter-apply').addEventListener('click', ()=>go('home'));
 
 // ── DETAIL ────────────────────────────────────────────────────────────────────
-const BACK_LABELS = { home:'Back to Discover', saved:'Back to Saved', friends:'Back to Friends', group:'Back to Group vote', profile:'Back to Profile', filter:'Back to Filter' };
+const BACK_LABELS = { home:'Back to Discover', saved:'Back to Saved', friends:'Back to Friends', deals:'Back to Deals', group:'Back to Group vote', profile:'Back to Profile', filter:'Back to Filter' };
 let detailFrom = 'home';
 let detailReq = 0;
 
@@ -319,6 +321,50 @@ function bindCheckIn(r){
   });
 }
 
+// ── DEALS ─────────────────────────────────────────────────────────────────────
+// Week starting today, e.g. tue, wed, … mon.
+function weekFromToday(){
+  const i = TerpData.DAYS.indexOf(TerpData.todayKey());
+  return [...TerpData.DAYS.slice(i), ...TerpData.DAYS.slice(0, i)];
+}
+const sampleNote = deals => deals.some(d=>d.sample)
+  ? `<p class="tt-fnote tt-deal-note">Sample deals: these haven’t been confirmed yet, so check with the spot before you go.</p>` : '';
+
+// "Today's deals" strip on Discover. Hidden when nothing runs today (or deals fail to load).
+function renderTodayDeals(){
+  const box = document.getElementById('deals-today');
+  const list = document.getElementById('deals-today-list');
+  TerpData.getDeals().then(deals=>{
+    const today = deals.filter(d=>d.days.includes(TerpData.todayKey()));
+    box.hidden = !today.length;
+    list.innerHTML = today.map(d=>UI.dealItem(d, { place:d.place, showDays:false })).join('');
+  }).catch(err=>{ console.error(err); box.hidden = true; });
+}
+
+// Deals tab: every day that has deals, today first.
+let dealsReq = 0;
+function renderDeals(){
+  const req = ++dealsReq;
+  const el = document.getElementById('deals-content');
+  return withLoading(el, TerpData.getDeals(), deals=>{
+    if(req!==dealsReq) return;
+    if(!deals.length){
+      UI.mount(el, `<div class="tt-gutter">${UI.emptyState({ title:'No deals yet', body:'Deals near campus will show up here once they’ve been added.', action:{ label:'Browse spots', name:'browse' } })}</div>`, { browse: ()=>go('home') });
+      return;
+    }
+    const days = weekFromToday().map((day, i)=>({ day, i, list: deals.filter(d=>d.days.includes(day)) })).filter(g=>g.list.length);
+    const noDays = deals.filter(d=>!d.days.length);
+    const section = (title, list, id) => `<section class="tt-deal-day" aria-labelledby="${id}">
+        <h2 class="tt-deal-day-title" id="${id}">${title}</h2>
+        <div class="tt-deal-list">${list.map(d=>UI.dealItem(d, { place:d.place, showDays:false })).join('')}</div>
+      </section>`;
+    const todayEmpty = days[0]?.i === 0 ? '' : `<section class="tt-deal-day"><h2 class="tt-deal-day-title">Today, ${UI.dayName(TerpData.todayKey())}</h2><p class="tt-fhint">No deals today.</p></section>`;
+    el.innerHTML = `<div class="tt-deals">${sampleNote(deals)}${todayEmpty}${
+      days.map(g=>section(g.i===0 ? `Today, ${UI.dayName(g.day)}` : UI.dayName(g.day), g.list, `deal-day-${g.day}`)).join('')}${
+      noDays.length ? section('Days not listed', noDays, 'deal-day-none') : ''}</div>`;
+  }, renderDeals, UI.skeletonCards(2));
+}
+
 // ── SAVED ─────────────────────────────────────────────────────────────────────
 // Newest saves first. Removing one (heart) re-renders the list and offers Undo.
 let savedReq = 0;
@@ -331,7 +377,7 @@ function renderSaved() {
   if(!ids.length){
     UI.mount(el, `<div class="tt-gutter">${UI.emptyState({
       title: 'No saved spots yet',
-      body: 'Tap ♡ on any spot, or Save spot in the Friends feed, to keep it here.',
+      body: 'Tap ♡ on any spot to keep it here.',
       action: { label:'Browse spots', name:'browse' },
     })}</div>`, { browse: ()=>go('home') });
     return Promise.resolve();

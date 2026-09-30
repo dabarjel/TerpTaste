@@ -45,17 +45,6 @@ const UI = (() => {
     return `<span class="tt-status${r.isOpenNow ? '' : ' is-closed'}">${r.isOpenNow ? 'Open' : 'Closed'}</span>`;
   }
 
-  // Friends get their name; anyone else is labelled as a student review.
-  function trustLine(r) {
-    const rv = r.terp.review;
-    if (!rv) return '';
-    if (rv.isFriend) {
-      const first = rv.author.split(' ')[0];
-      return `<div class="tt-trust"><span class="tt-avatar" style="background:${avatarColor(rv.author)}" aria-hidden="true">${esc(initials(rv.author))}</span>${esc(first)} checked in</div>`;
-    }
-    return `<div class="tt-trust is-student">Student review</div>`;
-  }
-
   // Icon-only heart for cards. data-name lets any save button name the spot in toasts.
   function saveButton(r) {
     const on = !!r.terp.saved;
@@ -93,15 +82,59 @@ const UI = (() => {
     return `<ul class="tt-dishes${large ? ' tt-dishes--large' : ''}" aria-label="Standout dishes">${list.map(d => `<li class="tt-dish">${esc(d)}</li>`).join('')}</ul>`;
   }
 
-  // compact: narrower card for horizontal rows (no trust line).
+  // ── Deals ─────────────────────────────────────────────────────────────────
+  const DAY_NAMES = { sun:'Sunday', mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday' };
+  const WHERE_LABEL = { 'in-store':'In store', 'uber-eats':'Uber Eats', 'doordash':'DoorDash' };
+  const dayName = d => DAY_NAMES[d] || d;
+  function dealDays(days) {
+    if (!days.length) return 'Days not listed';
+    if (days.length === 7) return 'Every day';
+    if (days.length === 1) return `${dayName(days[0])}s`;
+    return days.map(d => dayName(d).slice(0, 3)).join(', ');
+  }
+  const isAppDeal = d => d.where !== 'in-store';
+  // App deals link out rather than promising a price the app controls.
+  function dealAppUrl(d, placeName) {
+    if (d.url) return d.url;
+    const q = encodeURIComponent(placeName || '');
+    return d.where === 'uber-eats' ? `https://www.ubereats.com/search?q=${q}` : `https://www.doordash.com/search/store/${q}/`;
+  }
+  function dealChecked(d) {
+    return d.lastChecked ? `Last checked ${esc(formatDay(d.lastChecked))}` : 'Sample, not checked yet';
+  }
+
+  // Small tag on the card tile when the spot has a deal today.
+  function dealTag(r) {
+    const d = (r.terp.dealsToday || [])[0];
+    return d ? `<span class="tt-deal-tag">Deal today: ${esc(d.title)}</span>` : '';
+  }
+
+  // One deal. The separate price only shows when the title doesn't already say it.
+  // place names the spot (and the app search for app deals);
+  // linkPlace shows it as a link to the detail page (off on the detail page itself).
+  function dealItem(d, { place = null, linkPlace = true, showDays = true } = {}) {
+    const app = isAppDeal(d);
+    return `<article class="tt-deal">
+      <div class="tt-deal-top">
+        <h3 class="tt-deal-title">${esc(d.title)}</h3>
+        ${!app && d.price != null && !d.title.includes('$') ? `<span class="tt-deal-price">$${d.price % 1 ? d.price.toFixed(2) : d.price}</span>` : ''}
+      </div>
+      ${place && linkPlace ? `<button type="button" class="tt-deal-place" data-open="${esc(place.id)}">${esc(place.name)}</button>` : ''}
+      <p class="tt-deal-meta">${showDays ? `<span>${esc(dealDays(d.days))}</span>` : ''}<span>${esc(WHERE_LABEL[d.where])}</span></p>
+      ${app ? `<a class="tt-link tt-deal-out" href="${esc(dealAppUrl(d, place?.name))}" target="_blank" rel="noopener">Check the price on ${esc(WHERE_LABEL[d.where])}<span class="tt-visually-hidden"> (opens in a new tab)</span></a>` : ''}
+      <p class="tt-deal-checked">${d.sample && d.lastChecked ? 'Sample. ' : ''}${dealChecked(d)}</p>
+    </article>`;
+  }
+
+  // compact: narrower card for horizontal rows.
+  // Order: name, price/distance/walk time, dishes. The deal tag sits on the tile.
   function card(r, { compact = false } = {}) {
     return `<article class="tt-card${compact ? ' tt-card--compact' : ''}">
-      <div class="tt-card-media">${photoTile(r)}${openStatus(r)}${saveButton(r)}</div>
+      <div class="tt-card-media">${photoTile(r)}${openStatus(r)}${saveButton(r)}${dealTag(r)}</div>
       <div class="tt-card-body">
         <h3 class="tt-card-name"><button type="button" class="tt-card-link" data-open="${esc(r.id)}">${esc(r.name)}</button></h3>
-        ${dishes(r)}
-        ${compact ? '' : trustLine(r)}
         ${dataRow(r)}
+        ${dishes(r)}
       </div>
     </article>`;
   }
@@ -160,6 +193,7 @@ const UI = (() => {
             ${t.menu ? `<section class="tt-dsec"><h2 class="tt-dsec-title">On the menu</h2><p class="tt-dtext">${esc(t.menu)}</p></section>` : ''}
           </div>
           <div>
+            ${t.deals?.length ? `<section class="tt-dsec"><h2 class="tt-dsec-title">Deals</h2><div class="tt-deal-list">${t.deals.map(d => dealItem(d, { place: r, linkPlace: false })).join('')}</div></section>` : ''}
             ${facts.length ? `<section class="tt-dsec"><h2 class="tt-dsec-title">Good to know</h2><dl class="tt-facts">${facts.map(([k, v, note]) =>
               `<div><dt>${esc(k)}</dt><dd>${esc(v)}${note ? ` <span class="tt-fact-note">${esc(note)}</span>` : ''}</dd></div>`).join('')}</dl></section>` : ''}
             ${t.dietNotes?.length ? `<section class="tt-dsec"><h2 class="tt-dsec-title">Dietary notes</h2><ul class="tt-dlist">${t.dietNotes.map(d => `<li>${esc(d)}</li>`).join('')}</ul></section>` : ''}
@@ -267,7 +301,7 @@ const UI = (() => {
   }
 
   return { esc, price, walkMinutes, walkLabel, miles, avatarColor, initials,
-    photoTile, openStatus, trustLine, dishes, card, setSaveButton, saveTextButton, chip, formatDay,
+    photoTile, openStatus, dishes, dealItem, dealTag, dealDays, dayName, card, setSaveButton, saveTextButton, chip, formatDay,
     detail, detailSkeleton, checkInBlock, backButton, scoreboard, voteStatus,
     skeletonCards, emptyState, errorState, mount };
 })();

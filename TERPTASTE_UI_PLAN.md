@@ -89,6 +89,18 @@ Priority fixes from the UX heuristics review (2026-09-29), component level:
 First, before the screens (stop for review after this):
 0. ✅ **Highlighted dishes.** Every restaurant card shows up to 3 standout dishes as small tags under the name, on one line so the card stays compact; the row is hidden entirely when a spot has no dish data. The detail page shows the same dishes with more room. Source: `highlights` in `js/data/terp-content.js` (dishes the student review specifically recommends, all on the spot's menu). This is TerpTaste content, so it stays when Google Places data arrives.
 
+0b. ✅ **Card cleanup.** Card order is name, then price / distance / walk time, then dish tags. The "checked in" / "Student review" trust line is off the cards; check-in stays on detail pages, and reviews stay on detail pages with their honest label.
+0c. ✅ **Deals** (TerpTaste content, in `js/data/terp-content.js` under each place's `deals`). Each deal has title, price (or null), days of the week, where it applies (`in-store` / `uber-eats` / `doordash`), `lastChecked` (date, or null if nobody has checked it), and `sample` (true until confirmed).
+   - "Today's deals" strip at the top of Discover, based on the current day; hidden when there are none today.
+   - Small "Deal today" tag on the card tile when that spot has a deal today.
+   - "Deals" section on the detail page listing all of the spot's weekly deals.
+   - Deals tab replaces Friends in the sidebar and mobile nav, grouped by day with today first ("No deals today" when today is empty).
+   - App deals (Uber Eats / DoorDash) link out ("Check the price on Uber Eats") and never show a price.
+   - Every deal shows "Last checked [date]", or "Sample, not checked yet" while unconfirmed. A banner on the Deals tab says the deals are samples.
+   - Test switch `?today=mon` (any day) previews a different day.
+   - **Sample data, waiting on you:** only Marathon Deli ($7 gyros, Mondays, in store) is linked. Two deals sit in `TERP_DEALS_UNLINKED` and show nowhere until linked to a place: Five Guys BOGO on Uber Eats (Five Guys isn't in the place data, and no days were given) and the $7 cheesesteak sub on Tuesdays (the spot wasn't named).
+   - The Friends feed is no longer in the nav. Its screen is still in `index.html` but unreachable; decide whether to bring it back somewhere or delete it.
+
 Rebuild each page with the new components:
 1. Home / Discover: walk-time sections replace "For You / Budget / More nearby / Worth the trip"; each spot appears once. Drop "For You — based on your preferences" unless it actually uses the profile preferences.
 2. Search results
@@ -115,6 +127,7 @@ Leave room for a **List / Map toggle** in the Discover header. List is the only 
 ## Not in this round (next phase notes)
 - The Google Places API key **can't** live in frontend code on GitHub Pages. Anyone could grab it and run up charges. The next phase needs a small proxy (like a Cloudflare Worker or Vercel serverless function) that holds the key and calls Places for us.
 - Once the proxy exists, only `js/data/restaurants.js` should need to change.
+- **Move deals and dishes out of code.** Deals and highlighted dishes currently live in `js/data/terp-content.js`, so every change is a code change. Move them (and eventually the rest of TerpTaste's own content) to a small database with a simple admin form, so deals, `lastChecked` dates and dishes can be updated without touching code. Keep the same record shape so `js/data/restaurants.js` is the only file that changes. The admin form should set `lastChecked` when someone confirms a deal, and flip `sample` to false.
 - **Map view (Google Places phase).** Discover gets a working List / Map toggle. The map **must be a Google Map** (Maps JavaScript API): Google Maps Platform terms require Places content shown on a map to be displayed on a Google Map, so no Leaflet/OpenStreetMap/Mapbox.
   - Markers come from each place's `location`; tapping one opens the same card, then the detail view.
   - The map uses the same shared filter state and search as the list, so switching views never changes the results.

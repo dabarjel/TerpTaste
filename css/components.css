@@ -38,11 +38,43 @@
 .tt-dishes--large{gap:var(--s-2);max-height:none;}
 .tt-dishes--large .tt-dish{padding:6px var(--s-3);background:var(--surface-1);color:var(--text-primary);font-size:var(--t-14);line-height:20px;}
 
+/* ── Deals ────────────────────────────────────────────────────────────── */
+/* Tag on a card tile when the spot has a deal today. */
+.tt-deal-tag{position:absolute;left:var(--s-2);bottom:var(--s-2);z-index:2;max-width:calc(100% - var(--s-4));padding:3px var(--s-2);overflow:hidden;border-radius:var(--r-pill);background:var(--chalk);color:var(--asphalt);font-family:var(--f-body);font-size:var(--t-12);font-weight:600;line-height:1.4;white-space:nowrap;text-overflow:ellipsis;}
+.tt-deal{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) var(--s-4);border-radius:var(--r-card);background:var(--surface-1);}
+.tt-deal-top{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-3);}
+.tt-deal-title{margin:0;font-family:var(--f-display);font-weight:800;font-size:var(--t-20);line-height:1.05;color:var(--text-primary);}
+.tt-deal-price{font-family:var(--f-data);font-size:var(--t-20);color:var(--text-primary);}
+.tt-deal-place{align-self:flex-start;position:relative;z-index:1;padding:0;border:0;background:none;color:var(--text-secondary);font-family:var(--f-body);font-size:var(--t-14);font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;}
+.tt-deal-place:hover{color:var(--text-primary);}
+.tt-deal-place:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
+.tt-deal-meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-3);margin:0;font-family:var(--f-body);font-size:var(--t-14);color:var(--text-secondary);}
+.tt-deal-out{align-self:flex-start;}
+.tt-deal-checked{margin:var(--s-1) 0 0;font-family:var(--f-body);font-size:var(--t-12);color:var(--text-muted);}
+.tt-deal-list{display:grid;gap:var(--s-2);}
+
+/* "Today's deals" strip on Discover */
+.tt-today{padding:var(--s-4) 28px 0;}
+.tt-today-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s-3);margin-bottom:var(--s-3);}
+.tt-today-title{margin:0;font-family:var(--f-display);font-weight:800;font-size:var(--t-20);line-height:1;color:var(--text-primary);}
+.tt-deal-row{display:flex;gap:var(--card-gap);overflow-x:auto;padding-bottom:var(--s-1);scrollbar-width:none;}
+.tt-deal-row::-webkit-scrollbar{display:none;}
+.tt-deal-row .tt-deal{flex:0 0 auto;width:260px;}
+
+/* Deals tab */
+.tt-deals{display:grid;gap:var(--s-6);max-width:960px;padding:var(--s-5) 28px var(--s-7);}
+.tt-deal-day-title{margin:0 0 var(--s-3);font-family:var(--f-display);font-weight:900;font-size:var(--t-28);line-height:1;color:var(--text-primary);}
+.tt-deals .tt-deal-list{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--card-gap);}
+.tt-deal-note{margin:0;}
+
+@media (max-width:700px){
+  .tt-today{padding:var(--s-3) 16px 0;}
+  .tt-deals{padding:var(--s-4) 16px var(--s-6);gap:var(--s-5);}
+}
+
 /* ── Card text rows ───────────────────────────────────────────────────── */
-.tt-trust{display:flex;align-items:center;gap:var(--s-2);font-family:var(--f-body);font-size:var(--t-14);color:var(--text-secondary);}
-.tt-trust.is-student{color:var(--text-muted);}
 .tt-avatar{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;flex-shrink:0;font-size:10px;font-weight:600;color:var(--on-action);}
-.tt-data{display:grid;grid-template-columns:auto auto 1fr;column-gap:var(--s-4);margin-top:auto;font-family:var(--f-data);font-size:var(--t-14);color:var(--text-secondary);}
+.tt-data{display:grid;grid-template-columns:auto auto 1fr;column-gap:var(--s-4);font-family:var(--f-data);font-size:var(--t-14);color:var(--text-secondary);}
 .tt-data-strong{color:var(--text-primary);}
 
 /* ── Buttons used by states ───────────────────────────────────────────── */

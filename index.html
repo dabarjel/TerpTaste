@@ -31,9 +31,9 @@
       <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span>Group Vote</span>
     </button>
-    <button type="button" class="snav" id="sb-friends" data-nav="friends">
-      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M19 14c0 1-1 2-2 2H7l-4 4V5c0-1 1-2 2-2h12c1 0 2 1 2 2v9z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>Friends</span>
+    <button type="button" class="snav" id="sb-deals" data-nav="deals">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 11.2V4a1 1 0 011-1h7.2a1 1 0 01.7.3l7 7a1 1 0 010 1.4l-7.2 7.2a1 1 0 01-1.4 0l-7-7a1 1 0 01-.3-.7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+      <span>Deals</span>
     </button>
     <button type="button" class="snav" id="sb-saved" data-nav="saved">
       <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 17.5l-7-5.5a4 4 0 015.6-5.6L11 8l1.4-1.6A4 4 0 0118 12l-7 5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -62,6 +62,10 @@
           </div>
           <button class="surprise-btn" onclick="surpriseMe()">🎲 Surprise Me</button>
         </div>
+        <section class="tt-today" id="deals-today" hidden aria-labelledby="deals-today-title">
+          <div class="tt-today-head"><h2 class="tt-today-title" id="deals-today-title">Today’s deals</h2><button type="button" class="tt-link" data-nav="deals">All deals</button></div>
+          <div class="tt-deal-row" id="deals-today-list"></div>
+        </section>
         <div class="tt-controls">
           <label class="tt-search">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M13 13l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -116,6 +120,12 @@
         </div>
       </div>
 
+      <!-- DEALS -->
+      <div class="panel" id="panel-deals">
+        <div class="ph"><div><div class="ph-title">Deals</div><div class="ph-sub">Weekly deals near campus, today first. Check the date before you go.</div></div></div>
+        <div id="deals-content"></div>
+      </div>
+
       <!-- SAVED -->
       <div class="panel" id="panel-saved">
         <div class="ph"><div><div class="ph-title">Saved Spots</div><div class="ph-sub" id="saved-sub">Your shortlist</div></div></div>
@@ -164,7 +174,7 @@
         <button type="button" class="nitem" id="mn-home" data-nav="home"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H14v-5H8v5H4a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nlabel">Home</span></button>
         <button type="button" class="nitem" id="mn-filter" data-nav="filter"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 5h16M6 11h10M9 17h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Filter</span></button>
         <button type="button" class="nitem" id="mn-group" data-nav="group"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c1.7.5 3 2 3 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Group</span></button>
-        <button type="button" class="nitem" id="mn-friends" data-nav="friends"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M19 14c0 1-1 2-2 2H7l-4 4V5c0-1 1-2 2-2h12c1 0 2 1 2 2v9z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nlabel">Friends</span></button>
+        <button type="button" class="nitem" id="mn-deals" data-nav="deals"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 11.2V4a1 1 0 011-1h7.2a1 1 0 01.7.3l7 7a1 1 0 010 1.4l-7.2 7.2a1 1 0 01-1.4 0l-7-7a1 1 0 01-.3-.7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg><span class="nlabel">Deals</span></button>
         <button type="button" class="nitem" id="mn-saved" data-nav="saved"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 17.5l-7-5.5a4 4 0 015.6-5.6L11 8l1.4-1.6A4 4 0 0118 12l-7 5.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nlabel">Saved</span></button>
         <button type="button" class="nitem" id="mn-profile" data-nav="profile"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 19c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nlabel">Profile</span></button>
       </div>

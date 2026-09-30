@@ -11,11 +11,13 @@
 //     distanceMiles   straight-line miles from campus (from location, or the mock value)
 //   TerpTaste-only (never from Google), under .terp
 //     saved, checkIns, groupVotes, studentTags,
-//     highlights (up to 3 standout dishes), badge, hoursNote, waitMinutes, waitNote,
+//     highlights (up to 3 standout dishes), deals (weekly), dealsToday, badge,
+//     hoursNote, waitMinutes, waitNote,
 //     priceRange, review, menu, dietNotes
 //
 // Test switches (URL params): ?delay=500 adds latency, ?fail=1 makes every fetch reject,
-// ?friendsVote=1 has the mock group members vote so Leading/Final can be reviewed.
+// ?friendsVote=1 has the mock group members vote so Leading/Final can be reviewed,
+// ?today=mon pretends it is that day of the week (for reviewing deals).
 
 const TerpData = (() => {
   const params = new URLSearchParams(location.search);
@@ -23,7 +25,26 @@ const TerpData = (() => {
     delayMs: Number(params.get('delay')) || 0,
     fail: params.get('fail') === '1',
     friendsVote: params.get('friendsVote') === '1',
+    today: ['sun','mon','tue','wed','thu','fri','sat'].includes(params.get('today')) ? params.get('today') : null,
   };
+
+  // ── Deals ───────────────────────────────────────────────────────────────────
+  const DAYS = ['sun','mon','tue','wed','thu','fri','sat'];
+  const WHERE = ['in-store','uber-eats','doordash'];
+  const todayKey = () => config.today || DAYS[new Date().getDay()];
+  function normDeal(d) {
+    if (!d || typeof d.title !== 'string' || !d.title.trim()) return null;
+    return {
+      id: String(d.id || d.title),
+      title: d.title.trim(),
+      price: typeof d.price === 'number' && isFinite(d.price) ? d.price : null,
+      days: DAYS.filter(x => (d.days || []).includes(x)),        // week order
+      where: WHERE.includes(d.where) ? d.where : 'in-store',
+      url: typeof d.url === 'string' ? d.url : null,             // optional deep link for app deals
+      lastChecked: typeof d.lastChecked === 'string' ? d.lastChecked : null,
+      sample: d.sample !== false,
+    };
+  }
 
   const CAMPUS = { lat: 38.9869, lng: -76.9426 }; // McKeldin Mall, UMD College Park
 
@@ -107,6 +128,8 @@ const TerpData = (() => {
         studentTags: [],
         ...content,
         highlights: (content.highlights || []).filter(d => typeof d === 'string' && d.trim()).slice(0, 3),
+        deals: (content.deals || []).map(normDeal).filter(Boolean),
+        dealsToday: (content.deals || []).map(normDeal).filter(d => d && d.days.includes(todayKey())),
         saved: user.saved.has(place.id),
         checkIns: user.checkIns.filter(c => c.id === place.id).length,
         lastCheckIn: user.checkIns.find(c => c.id === place.id)?.date ?? null,
@@ -164,6 +187,12 @@ const TerpData = (() => {
       priceLevels: uniq(list.map(r => r.priceLevel)).sort((a, b) => PRICE_ORDER.indexOf(a) - PRICE_ORDER.indexOf(b)),
       studentTags: uniq(list.flatMap(r => r.terp.studentTags)),
     };
+  }
+
+  // Every deal at a known place, each with its restaurant attached as .place.
+  async function getDeals() {
+    const list = (await fetchPlaces()).map(toRestaurant);
+    return list.flatMap(r => r.terp.deals.map(d => ({ ...d, place: r })));
   }
 
   async function getRestaurant(id) {
@@ -277,7 +306,7 @@ const TerpData = (() => {
 
   return {
     config,
-    getRestaurants, getRestaurant, getFacets,
+    getRestaurants, getRestaurant, getFacets, getDeals, todayKey, DAYS,
     toggleSaved, setSaved, savedIds, restoreSaved,
     addCheckIn, removeCheckIn, restoreCheckIn, checkInHistory,
     getVote, addVoteOption, removeVoteOption, restoreVoteOption, castVote, resetVote, restoreVote,
