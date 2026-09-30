@@ -85,12 +85,21 @@ const UI = (() => {
     return `<div class="tt-data"><span>${price(r)}</span><span>${miles(r.distanceMiles)}</span><span class="tt-data-strong">${walkLabel(r.distanceMiles)}</span></div>`;
   }
 
+  // Standout dishes. On cards the row is one line: tags that don't fit wrap onto a hidden
+  // second line, so only whole tags ever show. No dishes → no row at all.
+  function dishes(r, { large = false } = {}) {
+    const list = r.terp.highlights || [];
+    if (!list.length) return '';
+    return `<ul class="tt-dishes${large ? ' tt-dishes--large' : ''}" aria-label="Standout dishes">${list.map(d => `<li class="tt-dish">${esc(d)}</li>`).join('')}</ul>`;
+  }
+
   // compact: narrower card for horizontal rows (no trust line).
   function card(r, { compact = false } = {}) {
     return `<article class="tt-card${compact ? ' tt-card--compact' : ''}">
       <div class="tt-card-media">${photoTile(r)}${openStatus(r)}${saveButton(r)}</div>
       <div class="tt-card-body">
         <h3 class="tt-card-name"><button type="button" class="tt-card-link" data-open="${esc(r.id)}">${esc(r.name)}</button></h3>
+        ${dishes(r)}
         ${compact ? '' : trustLine(r)}
         ${dataRow(r)}
       </div>
@@ -146,6 +155,7 @@ const UI = (() => {
         <div id="detail-checkin">${checkInBlock(r)}</div>
         <div class="tt-detail-cols">
           <div>
+            ${t.highlights?.length ? `<section class="tt-dsec"><h2 class="tt-dsec-title">What to order</h2>${dishes(r, { large: true })}</section>` : ''}
             ${review}
             ${t.menu ? `<section class="tt-dsec"><h2 class="tt-dsec-title">On the menu</h2><p class="tt-dtext">${esc(t.menu)}</p></section>` : ''}
           </div>
@@ -257,7 +267,7 @@ const UI = (() => {
   }
 
   return { esc, price, walkMinutes, walkLabel, miles, avatarColor, initials,
-    photoTile, openStatus, trustLine, card, setSaveButton, saveTextButton, chip, formatDay,
+    photoTile, openStatus, trustLine, dishes, card, setSaveButton, saveTextButton, chip, formatDay,
     detail, detailSkeleton, checkInBlock, backButton, scoreboard, voteStatus,
     skeletonCards, emptyState, errorState, mount };
 })();

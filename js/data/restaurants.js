@@ -11,7 +11,8 @@
 //     distanceMiles   straight-line miles from campus (from location, or the mock value)
 //   TerpTaste-only (never from Google), under .terp
 //     saved, checkIns, groupVotes, studentTags,
-//     badge, hoursNote, waitMinutes, waitNote, priceRange, review, menu, dietNotes
+//     highlights (up to 3 standout dishes), badge, hoursNote, waitMinutes, waitNote,
+//     priceRange, review, menu, dietNotes
 //
 // Test switches (URL params): ?delay=500 adds latency, ?fail=1 makes every fetch reject,
 // ?friendsVote=1 has the mock group members vote so Leading/Final can be reviewed.
@@ -105,6 +106,7 @@ const TerpData = (() => {
       terp: {
         studentTags: [],
         ...content,
+        highlights: (content.highlights || []).filter(d => typeof d === 'string' && d.trim()).slice(0, 3),
         saved: user.saved.has(place.id),
         checkIns: user.checkIns.filter(c => c.id === place.id).length,
         lastCheckIn: user.checkIns.find(c => c.id === place.id)?.date ?? null,

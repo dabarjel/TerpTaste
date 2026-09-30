@@ -31,6 +31,13 @@
 .tt-save[aria-pressed="true"]{color:var(--action);}
 .tt-save:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
 
+/* ── Standout dishes ──────────────────────────────────────────────────── */
+/* One line on cards: extra tags wrap to a clipped second line, so only whole tags show. */
+.tt-dishes{display:flex;flex-wrap:wrap;gap:var(--s-1);max-height:22px;margin:0;padding:0;overflow:hidden;list-style:none;}
+.tt-dish{max-width:100%;padding:2px var(--s-2);overflow:hidden;border-radius:var(--r-pill);background:var(--surface-2);color:var(--text-secondary);font-family:var(--f-body);font-size:var(--t-12);font-weight:500;line-height:18px;white-space:nowrap;text-overflow:ellipsis;}
+.tt-dishes--large{gap:var(--s-2);max-height:none;}
+.tt-dishes--large .tt-dish{padding:6px var(--s-3);background:var(--surface-1);color:var(--text-primary);font-size:var(--t-14);line-height:20px;}
+
 /* ── Card text rows ───────────────────────────────────────────────────── */
 .tt-trust{display:flex;align-items:center;gap:var(--s-2);font-family:var(--f-body);font-size:var(--t-14);color:var(--text-secondary);}
 .tt-trust.is-student{color:var(--text-muted);}

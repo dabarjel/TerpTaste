@@ -87,7 +87,7 @@ Priority fixes from the UX heuristics review (2026-09-29), component level:
 
 ## Phase 4: Screens
 First, before the screens (stop for review after this):
-0. **Highlighted dishes.** Every restaurant card shows up to 3 standout dishes as small tags under the name, on one line so the card stays compact; the row is hidden entirely when a spot has no dish data. The detail page shows the same dishes with more room. Source: `highlights` in `js/data/terp-content.js` (dishes the student review specifically recommends, all on the spot's menu). This is TerpTaste content, so it stays when Google Places data arrives.
+0. ✅ **Highlighted dishes.** Every restaurant card shows up to 3 standout dishes as small tags under the name, on one line so the card stays compact; the row is hidden entirely when a spot has no dish data. The detail page shows the same dishes with more room. Source: `highlights` in `js/data/terp-content.js` (dishes the student review specifically recommends, all on the spot's menu). This is TerpTaste content, so it stays when Google Places data arrives.
 
 Rebuild each page with the new components:
 1. Home / Discover: walk-time sections replace "For You / Budget / More nearby / Worth the trip"; each spot appears once. Drop "For You — based on your preferences" unless it actually uses the profile preferences.
